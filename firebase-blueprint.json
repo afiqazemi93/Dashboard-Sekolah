@@ -1,0 +1,18 @@
+{
+  "entities": {
+    "SchoolDetails": {
+      "title": "SchoolDetails",
+      "description": "Details of the school",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/school/{documentId}": {
+      "schema": "SchoolDetails",
+      "description": "Stores current school details in 'details' doc."
+    }
+  }
+}
