@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, ChevronLeft, ChevronRight, ExternalLink, Users, UserMinus, Percent } from 'lucide-react';
+import { UserCheck, Search, ChevronLeft, ChevronRight, ExternalLink, Users, UserMinus, Percent, PieChart, LayoutList } from 'lucide-react';
 import { SchoolDetails, KeberadaanRecord, Teacher } from '../types';
 import { getDocument } from '../supabase';
+import { KeberadaanAnalytics } from './KeberadaanAnalytics';
 
 interface KeberadaanViewProps {
   details: SchoolDetails;
@@ -42,6 +43,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
     ...(details.akpStaffs || [])
   ];
 
+  const [activeSubTab, setActiveSubTab] = useState<'senarai' | 'analitik'>('senarai');
   const [records, setRecords] = useState<KeberadaanRecord[]>(details.keberadaanRecords || []);
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -207,45 +209,68 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full max-w-7xl mx-auto">
       {/* ELEMEN BAHAGIAN ATAS */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-gray-200 pb-5">
-        <div className="flex items-center space-x-3.5">
-          <div className="w-12 h-12 bg-white border border-slate-200 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
-            <UserCheck className="w-6 h-6 flex-shrink-0" />
-          </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Keberadaan Guru & Staf</h2>
-          </div>
+      <div className="bg-gradient-to-r from-blue-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 overflow-hidden relative mb-6">
+        <div className="absolute top-0 right-0 p-8 opacity-10">
+           <UserCheck className="w-64 h-64 -mt-16 -mr-16" />
         </div>
-        <div>
+        <div className="z-10">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Keberadaan Guru & Staf</h1>
+        </div>
+        <div className="z-10">
           {details.keberadaanFormUrl ? (
-            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-semibold rounded-2xl transition-colors shadow-sm gap-2">
-              Borang Keberadaan <ExternalLink className="w-4 h-4" />
+            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-white text-indigo-700 hover:bg-slate-50 text-sm font-extrabold rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 gap-2">
+               Borang Keberadaan <ExternalLink className="w-4 h-4" />
             </a>
           ) : (
-            <button className="inline-flex items-center justify-center px-4 py-2 bg-purple-600 text-white text-sm font-semibold rounded-2xl shadow-sm opacity-50 cursor-not-allowed">
+            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-white/50 text-indigo-900 text-sm font-extrabold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2">
               Borang Keberadaan (Tiada Pautan)
             </button>
           )}
         </div>
       </div>
 
-      {/* KOTAK INPUT & TAPISAN (FILTERS) */}
-      <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-        {/* PILIH HARI / TARIKH */}
-        <div className="flex items-center gap-2 w-full lg:w-auto">
-          <button onClick={handlePrevDay} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <input 
-            type="date" 
-            value={selectedDate}
-            onChange={(e) => setSelectedDate(e.target.value)}
-            className="flex-1 lg:w-40 border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-center text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
-          />
-          <button onClick={handleNextDay} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+      <div className="flex border-b border-gray-200 mb-6 sticky top-0 z-50 bg-slate-50/95 backdrop-blur-md pt-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ring-1 ring-slate-100/50">
+        <button
+          onClick={() => setActiveSubTab('senarai')}
+          className={`pb-3 px-4 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
+            activeSubTab === 'senarai' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <LayoutList className="w-4 h-4" />
+          Rekod Harian
+        </button>
+        <button
+          onClick={() => setActiveSubTab('analitik')}
+          className={`pb-3 px-4 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
+            activeSubTab === 'analitik' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+          }`}
+        >
+          <PieChart className="w-4 h-4" />
+          Analitik Keberadaan Guru
+        </button>
+      </div>
+
+      {activeSubTab === 'analitik' ? (
+        <KeberadaanAnalytics records={records} staffs={allStaffs} />
+      ) : (
+        <>
+          {/* KOTAK INPUT & TAPISAN (FILTERS) */}
+          <div className="bg-white p-5 rounded-3xl border border-gray-200 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+            {/* PILIH HARI / TARIKH */}
+            <div className="flex items-center gap-2 w-full lg:w-auto">
+              <button onClick={handlePrevDay} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <input 
+                type="date" 
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="flex-1 lg:w-40 border border-slate-200 text-slate-700 rounded-xl px-3 py-2 text-center text-sm font-medium focus:ring-2 focus:ring-purple-500 focus:outline-none"
+              />
+              <button onClick={handleNextDay} className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
 
         {/* CARI & FILTER */}
         <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1 lg:flex-initial lg:max-w-2xl justify-end">
@@ -388,6 +413,8 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
           </table>
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }

@@ -49,7 +49,7 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
       subTabs: [
         { id: 'organisasi' as TabId, label: 'Organisasi Sekolah', icon: Network },
         { id: 'keberadaan' as TabId, label: 'Keberadaan', icon: UserCheck },
-        { id: 'senarai_murid' as TabId, label: 'Senarai Murid', icon: GraduationCap },
+        { id: 'senarai_murid' as TabId, label: 'Enrolmen Murid', icon: GraduationCap },
       ]
     },
     { id: 'kurikulum' as TabId, label: 'Kurikulum', icon: BookOpen },

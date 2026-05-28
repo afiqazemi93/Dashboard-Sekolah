@@ -69,12 +69,14 @@ export function PentadbiranView({ details, isAdmin, onSave }: PentadbiranViewPro
 
   return (
     <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
-      {/* Title section */}
-      <div className="flex items-center space-x-3 mb-4">
-        <div className="w-11 h-11 bg-white border border-gray-200 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">
-          <Network className="w-5 h-5" />
+      {/* Header Hero */}
+      <div className="bg-gradient-to-r from-blue-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 overflow-hidden relative mb-6">
+        <div className="absolute top-0 right-0 p-8 opacity-10">
+           <Network className="w-64 h-64 -mt-16 -mr-16" />
         </div>
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Organisasi Sekolah</h2>
+        <div className="z-10">
+          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Organisasi Sekolah</h1>
+        </div>
       </div>
 
       {/* Dynamic Gender Stats Cards */}

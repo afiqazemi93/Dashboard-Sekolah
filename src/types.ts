@@ -40,6 +40,7 @@ export interface StudentRecord {
   name: string;
   idNumber: string;
   className: string;
+  tahun?: string;
   gender: 'Lelaki' | 'Perempuan';
 }
 
