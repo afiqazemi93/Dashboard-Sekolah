@@ -556,19 +556,14 @@ function MetricCard({ title, subtitle, value, fromColor, toColor, iconColor, bgI
          <div className={`w-14 h-14 ${bgIconColor} rounded-full flex items-center justify-center shrink-0 shadow-sm backdrop-blur-md`}>
            <Icon className={`w-6 h-6 ${iconColor}`} />
          </div>
-         <div className="flex flex-col justify-center">
+         <div className="flex flex-col justify-center text-left">
            <h4 className="text-white/90 text-[14px] font-bold mb-0.5">{title}</h4>
            <div className="text-3xl font-black text-white tracking-tight leading-none mb-1">{value}</div>
            <div className="text-white/80 text-[11px] font-medium">{subtitle}</div>
          </div>
        </div>
-       <div className="absolute top-4 right-4 flex items-start justify-end opacity-50 z-0">
-          <div className="flex space-x-1">
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-          </div>
-       </div>
+       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+       <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
     </div>
   );
 }

@@ -21,13 +21,8 @@ function MetricCard({ title, value, fromColor, toColor, iconColor, bgIconColor, 
            </div>
          </div>
        </div>
-       <div className="absolute top-4 right-4 flex items-start justify-end opacity-50 z-0">
-          <div className="flex space-x-1">
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-          </div>
-       </div>
+       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+       <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
     </div>
   );
 }
@@ -52,7 +47,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   // Individu Form
   const [formName, setFormName] = useState('');
   const [formTahun, setFormTahun] = useState('Tahun 1');
-  const [formClass, setFormClass] = useState('');
+  const [formClass, setFormClass] = useState('AMAN');
   const [formGender, setFormGender] = useState<'Lelaki' | 'Perempuan'>('Lelaki');
 
   // Pukal Form
@@ -65,13 +60,13 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
   // Filtering & Pagination
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterTahun, setFilterTahun] = useState('Semua');
-  const [filterKelas, setFilterKelas] = useState('Semua');
+  const [filterTahun, setFilterTahun] = useState('Tahun 1');
+  const [filterKelas, setFilterKelas] = useState('AMAN');
   const [filterGender, setFilterGender] = useState('Semua');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<'name' | 'className' | 'tahun'>('name');
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
-  const itemsPerPage = 15;
+  const itemsPerPage = 10;
 
   const COLORS = ['#3b82f6', '#ec4899', '#10b981', '#f59e0b', '#8b5cf6', '#0ea5e9']; // modern colors
 
@@ -163,9 +158,11 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       let valB = b[sortField] || '';
       if (typeof valA === 'string' && typeof valB === 'string') {
          const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: 'base' });
-         return sortDirection === 'asc' ? cmp : -cmp;
+         if (cmp !== 0) {
+            return sortDirection === 'asc' ? cmp : -cmp;
+         }
       }
-      return 0;
+      return a.name.localeCompare(b.name, undefined, { numeric: true, sensitivity: 'base' });
     });
 
     return res;
@@ -183,44 +180,60 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   const handleAddIndividu = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formClass) return;
+    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+    const typedClass = formClass.trim().toUpperCase();
+    const matchedClass = allowedUpper.find(cls => typedClass.includes(cls));
+    
+    if (!matchedClass) {
+      alert("Hanya kelas AMAN, BAHAGIA, HARMONI, MAKMUR, atau SENTOSA yang dibenarkan.");
+      return;
+    }
+
     const newRec: StudentRecord = {
       id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
       idNumber: `ST-${Date.now().toString().slice(-6)}`,
       name: formName.trim().toUpperCase(),
-      className: formClass.trim().toUpperCase(),
+      className: matchedClass,
       tahun: formTahun,
       gender: formGender
     };
     saveStudents([newRec, ...students]);
-    setFormName(''); setFormClass('');
+    setFormName(''); setFormClass('AMAN');
     alert(`Rekod ${newRec.name} berjaya ditambah!`);
   };
 
   const handlePukalParse = () => {
     if (!pukalText.trim()) return;
-    const lines = pukalText.split('\\n').filter(l => l.trim());
+    const lines = pukalText.split('\n').filter(l => l.trim());
     const newRecs: StudentRecord[] = [];
+    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+
     lines.forEach(line => {
       // Format expected: Nama | Tahun | Kelas | Jantina
-      const parts = line.split(/[|\\t,]+/).map(p => p.trim());
+      const parts = line.split(/[|\t,]+/).map(p => p.trim());
       if (parts.length >= 4) {
-        newRecs.push({
-          id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-          idNumber: `ST-${Date.now().toString().slice(-6)}`,
-          name: parts[0].toUpperCase(),
-          tahun: parts[1],
-          className: parts[2].toUpperCase(),
-          gender: parts[3].toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
-        });
+        const rawClass = parts[2].toUpperCase();
+        const matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+
+        if (matchedClass) {
+          newRecs.push({
+            id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            idNumber: `ST-${Date.now().toString().slice(-6)}`,
+            name: parts[0].toUpperCase(),
+            tahun: parts[1],
+            className: matchedClass,
+            gender: parts[3].toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
+          });
+        }
       }
     });
 
     if (newRecs.length > 0) {
       saveStudents([...newRecs, ...students]);
       setPukalText('');
-      alert(`${newRecs.length} rekod murid berjaya ditambah secara pukal.`);
+      alert(`${newRecs.length} rekod murid berjaya ditambah secara pukal. (Sebarang rekod selain kelas AMAN, BAHAGIA, HARMONI, MAKMUR, SENTOSA ditapis keluar secara automatik)`);
     } else {
-      alert("Tiada data sah dijumpai. Sila ikut format yang ditetapkan.");
+      alert("Tiada data kelas AMAN, BAHAGIA, HARMONI, MAKMUR atau SENTOSA yang sah dijumpai.");
     }
   };
 
@@ -229,8 +242,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     const sheets = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6'];
     sheets.forEach(sheetName => {
         const ws = XLSX.utils.json_to_sheet([
-            { 'Nama Murid': 'CONTOH PELAJAR SATU', 'Kelas': 'BESTARI', 'Jantina': 'Lelaki' },
-            { 'Nama Murid': 'CONTOH PELAJAR DUA', 'Kelas': 'BESTARI', 'Jantina': 'Perempuan' },
+            { 'Nama Murid': 'CONTOH PELAJAR SATU', 'Kelas': 'AMAN', 'Jantina': 'Lelaki' },
+            { 'Nama Murid': 'CONTOH PELAJAR DUA', 'Kelas': 'BAHAGIA', 'Jantina': 'Perempuan' },
         ]);
         // Set column widths
         const wscols = [ {wch: 40}, {wch: 15}, {wch: 15} ];
@@ -252,19 +265,24 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
           const bstr = evt.target?.result;
           const wb = XLSX.read(bstr, { type: 'binary' });
           const allNew: StudentRecord[] = [];
+          const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
           
           wb.SheetNames.forEach(sheet => {
             const data: any[] = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
             data.forEach(row => {
               if (row['Nama Murid'] || row['Nama'] || row['NAMA']) {
-                allNew.push({
-                  id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-                  idNumber: `ST-${Date.now().toString().slice(-6)}`,
-                  name: String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim(),
-                  className: String(row['Kelas'] || row['KELAS'] || 'UMUM').toUpperCase().trim(),
-                  tahun: sheet.toLowerCase().includes('tahun') ? sheet : 'Tahun ' + String(row['Tahun'] || '1'),
-                  gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
-                });
+                const rawClass = String(row['Kelas'] || row['KELAS'] || '').toUpperCase().trim();
+                const matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+                if (matchedClass) {
+                  allNew.push({
+                    id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                    idNumber: `ST-${Date.now().toString().slice(-6)}`,
+                    name: String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim(),
+                    className: matchedClass,
+                    tahun: sheet.toLowerCase().includes('tahun') ? sheet : 'Tahun ' + String(row['Tahun'] || '1'),
+                    gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
+                  });
+                }
               }
             });
           });
@@ -325,16 +343,16 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
            bgIconColor="bg-purple-500/20" iconColor="text-purple-50" 
          />
          <MetricCard 
-           title="Lelaki" 
+           title="Murid Lelaki" 
            value={analytics.maleCount.toString()} 
            icon={User} 
            fromColor="from-blue-600" toColor="to-blue-500" 
            bgIconColor="bg-blue-500/20" iconColor="text-blue-50" 
          />
          <MetricCard 
-           title="Perempuan" 
+           title="Murid Perempuan" 
            value={analytics.femaleCount.toString()} 
-           icon={User} 
+           icon={UsersRound} 
            fromColor="from-pink-600" toColor="to-pink-500" 
            bgIconColor="bg-pink-500/20" iconColor="text-pink-50" 
          />
@@ -369,24 +387,54 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
          </div>
 
          {/* Pie Chart: Gender */}
-         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
-            <h3 className="font-extrabold text-slate-800 flex items-center gap-2 mb-2">
-               <PieChartIcon className="w-5 h-5 text-pink-500" />
-               Komposisi Jantina
-            </h3>
-            <p className="text-xs font-bold text-slate-500 mb-4 text-center mt-2">Nisbah Keseluruhan: <span className="text-indigo-600">{analytics.ratio}</span></p>
-            <div className="h-[200px] w-full">
-               <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                     <Pie data={chartDataGender} cx="50%" cy="50%" innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value" stroke="none">
-                        {chartDataGender.map((entry, index) => (
-                           <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                     </Pie>
-                     <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
-                     <Legend verticalAlign="bottom" height={36} iconType="circle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
-                  </PieChart>
-               </ResponsiveContainer>
+         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div>
+               <h3 className="font-extrabold text-slate-800 flex items-center gap-2 mb-2">
+                  <PieChartIcon className="w-5 h-5 text-pink-500" />
+                  Komposisi Jantina
+               </h3>
+               <div className="h-[180px] w-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <PieChart>
+                        <Pie data={chartDataGender} cx="50%" cy="50%" innerRadius={55} outerRadius={75} paddingAngle={5} dataKey="value" stroke="none">
+                           {chartDataGender.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                           ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
+                     </PieChart>
+                  </ResponsiveContainer>
+                  {/* Centered Ratio badge right in the donut hole */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                     <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Nisbah</span>
+                     <span className="text-sm font-black text-slate-700">{analytics.ratio}</span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Modern Neat Indicators */}
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-50">
+               <div className="bg-blue-50/50 border border-blue-100/30 rounded-2xl p-3 flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5">
+                     <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
+                     <span className="text-[11px] font-bold text-slate-500">Lelaki</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1">
+                     <span className="text-xl font-black text-slate-800">{analytics.maleCount}</span>
+                     <span className="text-[10px] font-bold text-slate-400">({analytics.total > 0 ? Math.round((analytics.maleCount / analytics.total) * 100) : 0}%)</span>
+                  </div>
+               </div>
+
+               <div className="bg-pink-50/50 border border-pink-100/30 rounded-2xl p-3 flex flex-col justify-between">
+                  <div className="flex items-center gap-1.5">
+                     <span className="w-2.5 h-2.5 rounded-full bg-pink-500"></span>
+                     <span className="text-[11px] font-bold text-slate-500">Perempuan</span>
+                  </div>
+                  <div className="mt-1 flex items-baseline gap-1">
+                     <span className="text-xl font-black text-slate-800">{analytics.femaleCount}</span>
+                     <span className="text-[10px] font-bold text-slate-400">({analytics.total > 0 ? Math.round((analytics.femaleCount / analytics.total) * 100) : 0}%)</span>
+                  </div>
+               </div>
             </div>
          </div>
       </div>
@@ -435,17 +483,17 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
             <table className="w-full text-left border-collapse min-w-[700px]">
                <thead className="bg-blue-600">
                   <tr className="border-b border-blue-700">
-                     <th className="px-6 py-4 text-[11px] font-bold text-white uppercase tracking-widest w-16">Bil</th>
-                     <th className="px-6 py-4 text-[11px] font-bold text-white uppercase tracking-widest cursor-pointer hover:bg-blue-700 transition-colors" onClick={() => handleSort('name')}>
+                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider w-16">Bil</th>
+                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">
                         Nama Murid
-                        {sortField === 'name' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
+                        
                      </th>
-                     <th className="px-6 py-4 text-[11px] font-bold text-white uppercase tracking-widest cursor-pointer hover:bg-blue-700 transition-colors" onClick={() => handleSort('tahun')}>
-                        Tahun / Kelas
-                        {sortField === 'tahun' && (sortDirection === 'asc' ? ' ↑' : ' ↓')}
+                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">
+                        Kelas
+                        
                      </th>
-                     <th className="px-6 py-4 text-[11px] font-bold text-white uppercase tracking-widest">Jantina</th>
-                     {isAdmin && <th className="px-6 py-4 text-[11px] font-bold text-white uppercase tracking-widest text-center">Tindakan</th>}
+                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">Jantina</th>
+                     {isAdmin && <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider text-center">Tindakan</th>}
                   </tr>
                </thead>
                <tbody className="divide-y divide-slate-50">
@@ -453,18 +501,23 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                      <tr key={s.id} className="even:bg-slate-50/50 hover:bg-indigo-50/50 transition-colors group">
                         <td className="px-6 py-4 text-sm font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                         <td className="px-6 py-4">
-                           <p className="text-sm font-black text-slate-800 group-hover:text-indigo-700 transition-colors">{s.name}</p>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5 opacity-0 group-hover:opacity-100 transition-opacity drop-shadow-sm">{s.idNumber || s.id}</p>
+                           <p className="text-sm font-medium text-slate-700 group-hover:text-indigo-700 transition-colors">{s.name}</p>
                         </td>
                         <td className="px-6 py-4">
-                           <span className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-blue-50 text-blue-700 uppercase tracking-wider mb-1 block w-max">
-                              {s.tahun}
+                           <span className="text-sm font-normal text-slate-600">
+                              {(() => {
+                                 const digit = s.tahun ? (s.tahun.match(/\d+/) ? s.tahun.match(/\d+/)![0] : '') : '';
+                                 const clsName = (s.className || '').toUpperCase();
+                                 
+                                 if (digit && !clsName.startsWith(digit)) {
+                                    return `${digit} ${clsName}`;
+                                 }
+                                 return clsName;
+                              })()}
                            </span>
-                           <span className="text-xs font-bold text-slate-500 ml-1">{s.className}</span>
                         </td>
                         <td className="px-6 py-4">
-                           <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${s.gender === 'Lelaki' ? 'bg-blue-500' : 'bg-pink-500'}`}></span>
+                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
                               {s.gender}
                            </span>
                         </td>
@@ -491,23 +544,23 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
          {/* Pagination Header */}
          {totalPages > 1 && (
-            <div className="p-4 border-t border-slate-100 flex items-center justify-between bg-slate-50/50">
+            <div className="p-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
                <p className="text-xs font-bold text-slate-500">
                   Memaparkan <span className="text-slate-800">{(currentPage - 1) * itemsPerPage + 1}</span> hingga <span className="text-slate-800">{Math.min(currentPage * itemsPerPage, processedData.length)}</span> daripada <span className="text-indigo-600">{processedData.length}</span> rekod
                </p>
-               <div className="flex items-center gap-2">
+               <div className="flex items-center gap-2 justify-end sm:ml-auto">
                   <button 
                     disabled={currentPage === 1} 
                     onClick={() => setCurrentPage(p => p - 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all"
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
                   >
                      <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-bold px-2 px-3 bg-white border border-slate-200 rounded-lg py-1.5">Muka {currentPage} / {totalPages}</span>
+                  <span className="text-xs font-bold px-3 bg-white border border-slate-200 rounded-lg py-1.5">Muka {currentPage} / {totalPages}</span>
                   <button 
                     disabled={currentPage === totalPages} 
                     onClick={() => setCurrentPage(p => p + 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all"
+                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
                   >
                      <ChevronRight className="w-4 h-4" />
                   </button>
@@ -563,7 +616,9 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         </div>
                         <div className="space-y-1.5">
                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nama Kelas</label>
-                           <input required type="text" value={formClass} onChange={e => setFormClass(e.target.value)} placeholder="Contoh: BESTARI" className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all font-bold text-sm text-slate-800" />
+                           <select value={formClass} onChange={e => setFormClass(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm text-slate-800 cursor-pointer">
+                              {['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'].map(c => <option key={c} value={c}>{c}</option>)}
+                           </select>
                         </div>
                         <div className="space-y-1.5">
                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Jantina</label>
@@ -668,12 +723,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
                            <h4 className="text-[13px] font-extrabold text-amber-900 flex items-center gap-2 mb-2">Peringatan Format</h4>
                            <p className="text-[11px] font-bold text-amber-700">Tampal (paste) data dari mana-mana jadual Excel. Pisahkan mengikut tab, koma atau |.</p>
-                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | Bestari | Lelaki<br/>Siti Nur | Tahun 1 | Bestari | Perempuan</p>
+                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | AMAN | Lelaki<br/>Siti Nur | Tahun 1 | HARMONI | Perempuan</p>
                         </div>
                         
                         <textarea 
                            className="w-full h-48 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
-                           placeholder="Ali Bin Abu | Tahun 1 | Bestari | Lelaki&#10;..."
+                           placeholder="Ali Bin Abu | Tahun 1 | AMAN | Lelaki&#10;..."
                            value={pukalText}
                            onChange={e => setPukalText(e.target.value)}
                         />

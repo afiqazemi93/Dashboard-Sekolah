@@ -26,6 +26,14 @@ const CACHE_TTL = 180000;
 const defaultPentadbirs: any[] = [];
 const defaultAkpStaffs: any[] = [];
 
+const ALLOWED_CLASSES = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+
+function isClassAllowed(className?: string): boolean {
+  if (!className) return false;
+  const upper = className.toUpperCase();
+  return ALLOWED_CLASSES.some(allowed => upper.includes(allowed));
+}
+
 // Fallback initial data with student and class headcounts definitions for total persistent coverage
 const fallbackDetails: SchoolDetails = {
   name: 'Sekolah Kebangsaan Batu Lanchang',
@@ -50,7 +58,7 @@ const fallbackDetails: SchoolDetails = {
   state: 'Pulau Pinang',
   motto: 'Berilmu, Beramal, Berbakti',
   vision: 'Pendidikan Berkualiti Insan Terdidik Negara Sejahtera',
-  mission: 'Melestarikan Sistem Pendidikan Yang Berkualiti Untuk Membangunkan Potensi Individu Bagi Memenuhi Aspirasi Negara',
+  mission: 'Melestarikan Sistem Pendidikan Yang Berkualiti Untuk Mengoptimalkan Potensi Individu Bagi Memenuhi Aspirasi Negara',
   keberadaanGasUrl: 'https://script.google.com/macros/s/AKfycbzZnxUYMEwyc5a1cQIVQfzdQvcfn1_qa75fz9Yu8tkR6GFscOY1aSLYFU5M1oZU_qxszw/exec',
   schoolSongLyrics: 'Kami murid SK Batu Lanchang\nBerikrar dan berjanji\nBelajar tekun berusaha\nMencapai cita-cita mulia',
   announcements: [
@@ -68,29 +76,24 @@ const fallbackDetails: SchoolDetails = {
   pentadbirs: defaultPentadbirs,
   akpStaffs: defaultAkpStaffs,
   classData: [
-    { id: 'p1', className: 'Prasekolah Bestari', males: 12, females: 13 },
-    { id: '1b', className: '1 Bestari', males: 18, females: 20 },
-    { id: '1p', className: '1 Pintar', males: 15, females: 16 },
-    { id: '2b', className: '2 Bestari', males: 14, females: 18 },
-    { id: '2p', className: '2 Pintar', males: 16, females: 15 },
-    { id: '3b', className: '3 Bestari', males: 17, females: 19 },
-    { id: '3p', className: '3 Pintar', males: 15, females: 14 },
-    { id: '4b', className: '4 Bestari', males: 20, females: 18 },
-    { id: '4p', className: '4 Pintar', males: 12, females: 15 },
-    { id: '5b', className: '5 Bestari', males: 16, females: 17 },
-    { id: '5p', className: '5 Pintar', males: 15, females: 15 },
-    { id: '6b', className: '6 Bestari', males: 19, females: 21 },
-    { id: '6p', className: '6 Pintar', males: 14, females: 16 },
+    { id: '1a', className: 'AMAN', males: 15, females: 18 },
+    { id: '2b', className: 'BAHAGIA', males: 16, females: 20 },
+    { id: '3h', className: 'HARMONI', males: 14, females: 18 },
+    { id: '4m', className: 'MAKMUR', males: 17, females: 15 },
+    { id: '5s', className: 'SENTOSA', males: 18, females: 17 },
   ],
   students: [
-    { id: 's1', name: 'Muhammad Aliff Farhan Bin Azmi', idNumber: 'SKBL-2024-001', className: '6 Bestari', gender: 'Lelaki' },
-    { id: 's2', name: 'Nur Alya Qistina Binti Mohd Faizal', idNumber: 'SKBL-2024-002', className: '6 Bestari', gender: 'Perempuan' },
-    { id: 's3', name: 'Adam Harith Bin Norazam', idNumber: 'SKBL-2024-003', className: '5 Bestari', gender: 'Lelaki' },
-    { id: 's4', name: 'Eshaan Pillai a/l Ravindran', idNumber: 'SKBL-2024-004', className: '4 Bestari', gender: 'Lelaki' },
-    { id: 's5', name: 'Siti Nuraisyah Binti Abdullah', idNumber: 'SKBL-2024-005', className: '3 Pintar', gender: 'Perempuan' },
-    { id: 's6', name: 'Lim Wei Han', idNumber: 'SKBL-2024-006', className: '5 Pintar', gender: 'Lelaki' },
-    { id: 's7', name: 'Yasmin Humaira Binti Khairul anuar', idNumber: 'SKBL-2024-007', className: '2 Bestari', gender: 'Perempuan' },
-    { id: 's8', name: 'Teh Jia Ling', idNumber: 'SKBL-2024-008', className: '1 Bestari', gender: 'Perempuan' },
+    { id: 's1', name: 'MUHAMMAD ALIFF FARHAN BIN AZMI', idNumber: 'SKBL-2024-001', className: 'AMAN', tahun: 'Tahun 1', gender: 'Lelaki' },
+    { id: 's2', name: 'NUR ALYA QISTINA BINTI MOHD FAIZAL', idNumber: 'SKBL-2024-002', className: 'AMAN', tahun: 'Tahun 1', gender: 'Perempuan' },
+    { id: 's3', name: 'ADAM HARITH BIN NORAZAM', idNumber: 'SKBL-2024-003', className: 'BAHAGIA', tahun: 'Tahun 2', gender: 'Lelaki' },
+    { id: 's4', name: 'ESHAAN PILLAI A/L RAVINDRAN', idNumber: 'SKBL-2024-004', className: 'HARMONI', tahun: 'Tahun 3', gender: 'Lelaki' },
+    { id: 's5', name: 'SITI NURAISYAH BINTI ABDULLAH', idNumber: 'SKBL-2024-005', className: 'MAKMUR', tahun: 'Tahun 4', gender: 'Perempuan' },
+    { id: 's6', name: 'LIM WEI HAN', idNumber: 'SKBL-2024-006', className: 'SENTOSA', tahun: 'Tahun 5', gender: 'Lelaki' },
+    { id: 's7', name: 'YASMIN HUMAIRA BINTI KHAIRUL ANUAR', idNumber: 'SKBL-2024-007', className: 'HARMONI', tahun: 'Tahun 2', gender: 'Perempuan' },
+    { id: 's8', name: 'TEH JIA LING', idNumber: 'SKBL-2024-008', className: 'SENTOSA', tahun: 'Tahun 4', gender: 'Perempuan' },
+    { id: 's9', name: 'AINA SYAFIQAH BINTI ROSLI', idNumber: 'SKBL-2024-009', className: 'AMAN', tahun: 'Tahun 5', gender: 'Perempuan' },
+    { id: 's10', name: 'MUHAMMAD AMIRUL BIN IBRAHIM', idNumber: 'SKBL-2024-010', className: 'BAHAGIA', tahun: 'Tahun 6', gender: 'Lelaki' },
+    { id: 's11', name: 'NUR SYUHADA BINTI MANSOR', idNumber: 'SKBL-2024-011', className: 'BAHAGIA', tahun: 'Tahun 6', gender: 'Perempuan' },
   ]
 };
 
@@ -270,8 +273,25 @@ export default function App() {
 
       // 6. Students & Class headcounts
       if (studentsData && !(studentsData instanceof Error)) {
-        data.classData = studentsData.classData && studentsData.classData.length > 0 ? studentsData.classData : fallbackDetails.classData;
-        data.students = studentsData.students && studentsData.students.length > 0 ? studentsData.students : fallbackDetails.students;
+        const rawClassData = studentsData.classData && studentsData.classData.length > 0 ? studentsData.classData : fallbackDetails.classData;
+        const rawStudents = studentsData.students && studentsData.students.length > 0 ? studentsData.students : fallbackDetails.students;
+
+        // Clean and filter everything directly from the database load
+        const cleanedClassData = (rawClassData || []).filter((c: any) => isClassAllowed(c.className));
+        const cleanedStudents = (rawStudents || []).filter((s: any) => isClassAllowed(s.className));
+
+        data.classData = cleanedClassData.length > 0 ? cleanedClassData : fallbackDetails.classData;
+        data.students = cleanedStudents.length > 0 ? cleanedStudents : fallbackDetails.students;
+
+        // If we found and deleted non-matching items from DB, save the pristine DB states immediately
+        if (cleanedClassData.length !== (rawClassData || []).length || cleanedStudents.length !== (rawStudents || []).length) {
+          seedPromises.push(
+            setDocument('students', {
+              classData: data.classData,
+              students: data.students
+            })
+          );
+        }
       } else if (!studentsData) {
         seedPromises.push(
           setDocument('students', {

@@ -261,7 +261,7 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
     <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto animate-in fade-in duration-500">
       
       {/* Filters Section */}
-      <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 overflow-x-auto no-scrollbar pb-2">
+      <div className="flex flex-wrap items-center justify-center gap-2 pb-4">
              
              {/* Exact Date Filter */}
              <div className="flex items-center gap-1.5 bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-slate-200/80 px-2.5 py-1.5 focus-within:ring-2 focus-within:ring-indigo-500 transition-shadow">

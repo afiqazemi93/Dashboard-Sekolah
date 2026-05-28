@@ -226,13 +226,8 @@ function MetricCard({ title, subtitle, value, fromColor, toColor, iconColor, bgI
            <div className="text-white/80 text-[11px] font-medium leading-none">{subtitle}</div>
          </div>
        </div>
-       <div className="absolute top-4 right-4 flex items-start justify-end opacity-50 z-0">
-          <div className="flex space-x-1">
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-          </div>
-       </div>
+       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+       <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
     </div>
   );
 }

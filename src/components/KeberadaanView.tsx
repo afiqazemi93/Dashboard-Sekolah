@@ -24,13 +24,8 @@ function MetricCard({ title, value, fromColor, toColor, iconColor, bgIconColor, 
            </div>
          </div>
        </div>
-       <div className="absolute top-4 right-4 flex items-start justify-end opacity-50 z-0">
-          <div className="flex space-x-1">
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-             <div className="w-1 h-1 rounded-full bg-white"></div>
-          </div>
-       </div>
+       <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
+       <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
     </div>
   );
 }
@@ -229,7 +224,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
         </div>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-6 sticky top-0 z-50 bg-slate-50/95 backdrop-blur-md pt-4 pb-0 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 ring-1 ring-slate-100/50">
+      <div className="flex border-b border-gray-200 mb-6">
         <button
           onClick={() => setActiveSubTab('senarai')}
           className={`pb-3 px-4 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
