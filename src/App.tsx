@@ -112,6 +112,11 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  // States for Firebase status tracking & error reporting
+  const [firebaseError, setFirebaseError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
+
   // Synchronous local-first state initialization
   const [schoolDetails, setSchoolDetails] = useState<SchoolDetails>(() => {
     try {
@@ -193,6 +198,25 @@ export default function App() {
         getDoc(calendarDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/calendar'); return null; }),
         getDoc(keberadaanDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/keberadaan'); return null; })
       ]);
+
+      // Check if any query failed (they returned null in `.catch`)
+      const hasErrors = [
+        detailsSnap,
+        teachersSnap,
+        mediaLogoSnap,
+        mediaSongSnap,
+        mediaPlanSnap,
+        studentsSnap,
+        calendarSnap,
+        keberadaanSnap
+      ].some(snap => snap === null);
+
+      if (hasErrors) {
+        setFirebaseError("Gagal berhubung dengan Firebase Firestore. Sila periksa samada pangkalan data anda wujud atau periksa tatapan Security Rules serta konfigurasi Environment Variables Firebase.");
+        return;
+      } else {
+        setFirebaseError(null); // Clear errors on success
+      }
       
       const detailsDocExists = detailsSnap && detailsSnap.exists();
       const teachersDocExists = teachersSnap && teachersSnap.exists();
@@ -277,6 +301,7 @@ export default function App() {
         await handleSaveDetails(initialDetailsToSeed);
       }
     } catch (err: any) {
+      setFirebaseError(`Gagal membaca data dari Firebase: ${err?.message || err}`);
       console.warn("Failed to fetch latest school details asynchronously from Firebase:", err);
     }
   };
@@ -289,6 +314,8 @@ export default function App() {
   async function handleSaveDetails(updatedDetails: SchoolDetails) {
     const oldDetails = schoolDetails;
     const timestampedDetails = { ...updatedDetails, updatedAt: Date.now() };
+    setSaveStatus('saving');
+    setSaveErrorMessage(null);
     setSchoolDetails(timestampedDetails);
     
     try {
@@ -329,116 +356,127 @@ export default function App() {
         schoolSongLyrics: schoolSongLyrics || ""
       };
 
-      // Helper to log errors without throwing so that execution continues for other saves
+      // Helper to log errors and throw them so that the save operation bubbles up failures correctly
       const safeFirestoreWrite = async (operation: () => Promise<void>, path: string) => {
         try {
           await operation();
-        } catch (err) {
-          console.warn(`Failed to save ${path} to Firestore:`, err);
+        } catch (err: any) {
+          console.error(`Failed to save ${path} to Firestore:`, err);
+          throw new Error(`Gagal menyimpan laluan '${path}' - ${err?.message || err}`);
         }
       };
 
       const uploadImageFields = async (items: any[]) => {
-        const updated = [...items];
-        for (let i = 0; i < updated.length; i++) {
-          if (updated[i].photoUrl && updated[i].photoUrl.startsWith('data:image')) {
+        return Promise.all((items || []).map(async (item) => {
+          const updated = { ...item };
+          if (updated.photoUrl && updated.photoUrl.startsWith('data:image')) {
              try {
-                 const fileName = `images/staff_${updated[i].id}_${Date.now()}.webp`;
-                 const url = await uploadBase64ToStorage(fileName, updated[i].photoUrl);
-                 updated[i].photoUrl = url;
+                 const fileName = `images/staff_${updated.id}_${Date.now()}.webp`;
+                 const url = await uploadBase64ToStorage(fileName, updated.photoUrl);
+                 updated.photoUrl = url;
              } catch (e) {
                  console.error("Failed to upload staff photo to Storage", e);
-                 // If Firebase storage fails, we might still have a huge string.
-                 if (updated[i].photoUrl.length > 1048000) {
-                   updated[i].photoUrl = ''; // Clear it so it doesn't crash Firestore
+                 if (updated.photoUrl.length > 1048000) {
+                   updated.photoUrl = '';
                  }
              }
           }
-        }
-        return updated;
+          return updated;
+        }));
       };
 
-      const finalTeachers = await uploadImageFields(teachers || []);
-      const finalPentadbirs = await uploadImageFields(pentadbirs || []);
-      const finalAkp = await uploadImageFields(akpStaffs || []);
+      const [finalTeachers, finalPentadbirs, finalAkp] = await Promise.all([
+        uploadImageFields(teachers || []),
+        uploadImageFields(pentadbirs || []),
+        uploadImageFields(akpStaffs || [])
+      ]);
       
       timestampedDetails.teachers = finalTeachers;
       timestampedDetails.pentadbirs = finalPentadbirs;
       timestampedDetails.akpStaffs = finalAkp;
 
       let finalLogoUrl = logoUrl || "";
-      if (finalLogoUrl.startsWith('data:image')) {
-          try {
-              finalLogoUrl = await uploadBase64ToStorage(`images/logo_${Date.now()}.webp`, finalLogoUrl);
-          } catch (e) {
-              if (finalLogoUrl.length > 1048000) finalLogoUrl = '';
-          }
-      }
-      timestampedDetails.logoUrl = finalLogoUrl;
-
       let finalPlanUrl = schoolPlanImageUrl || "";
-      if (finalPlanUrl.startsWith('data:image')) {
-          try {
-              finalPlanUrl = await uploadBase64ToStorage(`images/plan_${Date.now()}.webp`, finalPlanUrl);
-          } catch (e) {
-             if (finalPlanUrl.length > 1048000) finalPlanUrl = '';
+
+      await Promise.all([
+        (async () => {
+          if (finalLogoUrl.startsWith('data:image')) {
+              try {
+                  finalLogoUrl = await uploadBase64ToStorage(`images/logo_${Date.now()}.webp`, finalLogoUrl);
+              } catch (e) {
+                  if (finalLogoUrl.length > 1048000) finalLogoUrl = '';
+              }
           }
-      }
+        })(),
+        (async () => {
+          if (finalPlanUrl.startsWith('data:image')) {
+              try {
+                  finalPlanUrl = await uploadBase64ToStorage(`images/plan_${Date.now()}.webp`, finalPlanUrl);
+              } catch (e) {
+                 if (finalPlanUrl.length > 1048000) finalPlanUrl = '';
+              }
+          }
+        })()
+      ]);
+
+      timestampedDetails.logoUrl = finalLogoUrl;
       timestampedDetails.schoolPlanImageUrl = finalPlanUrl;
 
-      await safeFirestoreWrite(() => setDoc(detailsDocRef, basicDataToSave, { merge: true }), 'school/details');
+      // Parallelize all Firestore write operations so the entire process runs in 1 RTT (round-trip time)
+      await Promise.all([
+        safeFirestoreWrite(() => setDoc(detailsDocRef, basicDataToSave, { merge: true }), 'school/details'),
+        safeFirestoreWrite(() => setDoc(teachersDocRef, { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp }, { merge: true }), 'school/teachers'),
+        safeFirestoreWrite(() => setDoc(mediaLogoDocRef, { logoUrl: finalLogoUrl }, { merge: true }), 'school/media_logo'),
+        safeFirestoreWrite(async () => {
+          const audioStr = schoolSongAudioUrl || "";
+          if (audioStr && audioStr.length > 1048000) {
+             console.warn("Saiz fail audio terlalu besar");
+             return;
+          }
+          await setDoc(mediaSongDocRef, { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr }, { merge: true });
+        }, 'school/media_song'),
+        safeFirestoreWrite(() => setDoc(mediaPlanDocRef, { schoolPlanImageUrl: finalPlanUrl }, { merge: true }), 'school/media_plan'),
+        safeFirestoreWrite(() => setDoc(studentsDocRef, { classData: classData || [], students: students || [] }, { merge: true }), 'school/students'),
+        safeFirestoreWrite(() => setDoc(calendarDocRef, { calendarEvents: calendarEvents || [] }, { merge: true }), 'school/calendar'),
+        safeFirestoreWrite(async () => {
+          const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
+          if (kCache && kCache.length > 1048000) {
+            console.warn("Keberadaan data exceeds 1MB, trimming cache to save metadata integrity.");
+          }
+          await setDoc(keberadaanDocRef, { 
+            keberadaanCachedData: kCache,
+            keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
+            keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
+            keberadaanSheetRange: keberadaanSheetRange || "",
+            keberadaanFormUrl: keberadaanFormUrl || "",
+            keberadaanRecords: keberadaanRecords || []
+          }, { merge: true });
+        }, 'school/keberadaan')
+      ]);
 
-      // Save teachers list
-      await safeFirestoreWrite(() => setDoc(teachersDocRef, { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp }, { merge: true }), 'school/teachers');
-
-      // Save logo
-      await safeFirestoreWrite(async () => {
-        await setDoc(mediaLogoDocRef, { logoUrl: finalLogoUrl }, { merge: true });
-      }, 'school/media_logo');
-
-      // Save audio (Isolated and length checked)
-      await safeFirestoreWrite(async () => {
-        const audioStr = schoolSongAudioUrl || "";
-        if (audioStr && audioStr.length > 1048000) {
-           console.warn("Saiz fail audio terlalu besar");
-           return;
-        }
-        await setDoc(mediaSongDocRef, { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr }, { merge: true });
-      }, 'school/media_song');
-
-      // Save school plan image
-      await safeFirestoreWrite(async () => {
-        await setDoc(mediaPlanDocRef, { schoolPlanImageUrl: finalPlanUrl }, { merge: true });
-      }, 'school/media_plan');
-
-      // Save student roster & class headcounts (Isolated partition)
-      await safeFirestoreWrite(() => setDoc(studentsDocRef, { classData: classData || [], students: students || [] }, { merge: true }), 'school/students');
-
-      // Save calendar (Isolated partition)
-      await safeFirestoreWrite(() => setDoc(calendarDocRef, { calendarEvents: calendarEvents || [] }, { merge: true }), 'school/calendar');
-
-      // Save keberadaan configuration and cache (Isolated partition)
-      await safeFirestoreWrite(async () => {
-        const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
-        if (kCache && kCache.length > 1048000) {
-          console.warn("Keberadaan data exceeds 1MB, trimming cache to save metadata integrity.");
-        }
-        await setDoc(keberadaanDocRef, { 
-          keberadaanCachedData: kCache,
-          keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
-          keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
-          keberadaanSheetRange: keberadaanSheetRange || "",
-          keberadaanFormUrl: keberadaanFormUrl || "",
-          keberadaanRecords: keberadaanRecords || []
-        }, { merge: true });
-      }, 'school/keberadaan');
+      // Everything saved successfully!
+      setSaveStatus('saved');
+      
+      // Auto clear saved toast after several seconds
+      setTimeout(() => {
+        setSaveStatus(prev => prev === 'saved' ? 'idle' : prev);
+      }, 4000);
 
     } catch (err: any) {
       const errMsg = err?.message || String(err);
       if (errMsg.includes('offline') || !navigator.onLine) {
         console.warn("Could not sync with Firebase database because the client is offline. Local cache updated.");
+        setSaveStatus('saved'); // Offline is self-healing in Firestore, mark as saved locally
       } else {
-        console.warn("Failed to sync save with Firebase backend (quota/permission/limit error):", err);
+        console.error("Firebase Sync Failure:", err);
+        setSaveStatus('error');
+        setSaveErrorMessage(`Gagal selaraskan ke Firebase Firestore: ${errMsg}. Sila semak Security Rules pangkalan data.`);
+        
+        // Roll back the memory state and localStorage cache to prevent incorrect UI confirmation
+        setSchoolDetails(oldDetails);
+        try {
+          localStorage.setItem('skbl_details', JSON.stringify(oldDetails));
+        } catch (storageErr) {}
       }
     }
   };
@@ -494,7 +532,54 @@ export default function App() {
           onMenuClick={() => setIsSidebarOpen(true)}
         />
         
-        <main ref={mainRef} className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4 lg:pt-7 overflow-y-auto">
+        <main ref={mainRef} className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4 lg:pt-7 overflow-y-auto w-full">
+          {firebaseError && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex flex-col gap-2 shadow-sm text-red-800" id="firebase-conn-error">
+              <div className="flex items-center gap-2 font-bold text-base">
+                <span>⚠️ Amaran Sambungan Firebase</span>
+              </div>
+              <p className="text-sm leading-relaxed">{firebaseError}</p>
+              <p className="text-xs text-red-500 font-mono mt-1">Sila periksa samada Environment Variables Firebase (NEXT_PUBLIC_FIREBASE_...) sudah dikonfigurasikan dengan betul di Vercel.</p>
+            </div>
+          )}
+
+          {saveStatus === 'error' && saveErrorMessage && (
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col gap-2 shadow-sm text-amber-900" id="firebase-save-error">
+              <div className="flex items-center gap-2 font-bold text-base">
+                <span>⚠️ Gagal Menyimpan Ke Awan (Cloud Sync Failed)</span>
+              </div>
+              <p className="text-sm leading-relaxed">{saveErrorMessage}</p>
+              <p className="text-xs text-amber-600 font-mono mt-1 border-t border-amber-200/50 pt-2">Data tempatan yang tidak selari telah dipulihkan (rolled back) untuk mengelakkan percanggahan data.</p>
+              <button 
+                onClick={() => { setSaveStatus('idle'); setSaveErrorMessage(null); }} 
+                className="mt-2 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-100 py-1.5 px-3 rounded-lg self-start transition-colors"
+              >
+                Tutup Amaran
+              </button>
+            </div>
+          )}
+
+          {saveStatus === 'saving' && (
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 shadow-sm text-blue-800 animate-pulse" id="firebase-saving-status">
+              <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+              <p className="text-sm font-medium">Sedang menyelaraskan data anda ke pangkalan data Firebase...</p>
+            </div>
+          )}
+
+          {saveStatus === 'saved' && (
+            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-2xl flex items-center justify-between shadow-sm text-green-800 text-sm" id="firebase-saved-status">
+              <div className="flex items-center gap-2 font-medium">
+                <span>✅ Berjaya Disimpan ke Firebase Firestore</span>
+              </div>
+              <button 
+                onClick={() => setSaveStatus('idle')} 
+                className="text-xs font-bold text-green-700 hover:text-green-800 hover:underline"
+              >
+                Tutup
+              </button>
+            </div>
+          )}
+
           <AnimatePresence mode="wait">
             <motion.div
               key={activeTab}
