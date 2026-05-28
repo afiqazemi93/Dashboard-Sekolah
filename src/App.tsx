@@ -100,44 +100,13 @@ export default function App() {
   const [isLoginOpen, setIsLoginOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Database Connection Panel States
-  const [isDbConfigOpen, setIsDbConfigOpen] = useState(false);
-  const [dbUrlInput, setDbUrlInput] = useState(() => {
-    try {
-      return localStorage.getItem('custom_supabase_url') || 'https://vmydujwojodpazbrhhri.supabase.co';
-    } catch (e) {
-      return 'https://vmydujwojodpazbrhhri.supabase.co';
-    }
-  });
-  const [dbAnonInput, setDbAnonInput] = useState(() => {
-    try {
-      return localStorage.getItem('custom_supabase_anon_key') || '';
-    } catch (e) {
-      return '';
-    }
-  });
-  const [dbSettingStatus, setDbSettingStatus] = useState<string | null>(null);
-
   // States for Firebase status tracking & error reporting
   const [firebaseError, setFirebaseError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
 
   // Synchronous database/cache-first state initialization
-  const [schoolDetails, setSchoolDetails] = useState<SchoolDetails>(() => {
-    try {
-      const cached = localStorage.getItem('school_details_cache');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed && typeof parsed === 'object') {
-          return { ...fallbackDetails, ...parsed };
-        }
-      }
-    } catch (e) {
-      console.warn("Gagal membaca dari localStorage:", e);
-    }
-    return fallbackDetails;
-  });
+  const [schoolDetails, setSchoolDetails] = useState<SchoolDetails>(fallbackDetails);
 
   const mainRef = React.useRef<HTMLElement>(null);
 
@@ -217,17 +186,6 @@ export default function App() {
       setFirebaseError(null); // Clear errors on success
 
       let data: SchoolDetails = { ...fallbackDetails };
-      try {
-        const cached = localStorage.getItem('school_details_cache');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          if (parsed && typeof parsed === 'object') {
-            data = { ...data, ...parsed };
-          }
-        }
-      } catch (e) {
-        console.warn("Failed to load cached details for fetch merge:", e);
-      }
 
       const seedPromises: Promise<any>[] = [];
 
@@ -349,11 +307,6 @@ export default function App() {
       }
 
       setSchoolDetails(data);
-      try {
-        localStorage.setItem('school_details_cache', JSON.stringify(data));
-      } catch (e) {
-        console.warn("Failed to catch school_details_cache:", e);
-      }
 
       if (seedPromises.length > 0) {
         console.info(`Supabase DB partially empty. Seeding ${seedPromises.length} missing partitions in background...`);
@@ -372,58 +325,12 @@ export default function App() {
     fetchSchoolDetails();
   }, []);
 
-  const handleSaveDbSettings = (e: React.FormEvent) => {
-    e.preventDefault();
-    setDbSettingStatus(null);
-    if (!dbUrlInput.trim()) {
-      setDbSettingStatus("Ralat: Sila masukkan URL Supabase.");
-      return;
-    }
-    if (!dbAnonInput.trim()) {
-      setDbSettingStatus("Ralat: Sila masukkan Public Anon Key Supabase.");
-      return;
-    }
-
-    try {
-      localStorage.setItem('custom_supabase_url', dbUrlInput.trim());
-      localStorage.setItem('custom_supabase_anon_key', dbAnonInput.trim());
-      setDbSettingStatus("Sukses: Konfigurasi disimpan! Memuat semula sistem...");
-      
-      // Auto reload after 1.2s to initialize new connection
-      setTimeout(() => {
-        window.location.reload();
-      }, 1200);
-    } catch (err: any) {
-      setDbSettingStatus(`Ralat menyimpan: ${err?.message || err}`);
-    }
-  };
-
-  const handleResetDbSettings = () => {
-    try {
-      localStorage.removeItem('custom_supabase_url');
-      localStorage.removeItem('custom_supabase_anon_key');
-      setDbSettingStatus("Sukses: Konfigurasi dikosongkan! Memuat semula...");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1200);
-    } catch (err: any) {
-      setDbSettingStatus(`Ralat memadam: ${err?.message || err}`);
-    }
-  };
-
   async function handleSaveDetails(updatedDetails: SchoolDetails) {
     const oldDetails = schoolDetails;
     const timestampedDetails = { ...updatedDetails, updatedAt: Date.now() };
     setSaveStatus('saving');
     setSaveErrorMessage(null);
     setSchoolDetails(timestampedDetails);
-
-    // 1. Instantly save to LocalStorage so edits survive ANY network failure, refresh, or missing database configuration.
-    try {
-      localStorage.setItem('school_details_cache', JSON.stringify(timestampedDetails));
-    } catch (e) {
-      console.warn("Gagal menyimpan ke localStorage:", e);
-    }
 
     // 2. If Supabase is not configured, treat the local cache save as fully successful.
     if (!isSupabaseConfigured) {
@@ -522,13 +429,6 @@ export default function App() {
       timestampedDetails.logoUrl = finalLogoUrl;
       timestampedDetails.schoolPlanImageUrl = finalPlanUrl;
 
-      // Update LocalStorage caching with finalized CDN URLs as well
-      try {
-        localStorage.setItem('school_details_cache', JSON.stringify(timestampedDetails));
-      } catch (e) {
-         console.warn("Gagal menyimpan versi muktamad ke localStorage:", e);
-      }
-
       const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
 
       // Parallelize all Supabase write operations so the entire process runs in 1 RTT (round-trip time)
@@ -577,9 +477,6 @@ export default function App() {
         
         // Roll back the memory state to prevent incorrect UI confirmation
         setSchoolDetails(oldDetails);
-        try {
-          localStorage.setItem('school_details_cache', JSON.stringify(oldDetails));
-        } catch (e) {}
       }
     }
   };
@@ -636,141 +533,6 @@ export default function App() {
         />
         
         <main ref={mainRef} className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4 lg:pt-7 overflow-y-auto w-full">
-          {/* Database Integration Panel - ONLY visible to logged-in administrator */}
-          {isAdmin && (
-            <>
-              {/* Database Integration Status Bar */}
-              <div className="mb-6 bg-white border border-gray-150 rounded-2xl px-5 py-3 shadow-[0_2px_8px_rgba(0,0,0,0.02)] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 animate-fade-in">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full shrink-0 ${isSupabaseConfigured && !firebaseError ? 'bg-emerald-500 animate-pulse' : 'bg-amber-400'}`} />
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-gray-400 font-bold tracking-wider uppercase font-mono leading-none">Status Database</span>
-                    <span className="text-sm font-bold text-gray-800 leading-tight">
-                      {isSupabaseConfigured && !firebaseError ? 'Awan Aktif (Supabase Cloud)' : 'Tempatan (Mod Offline / Local Storage)'}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button 
-                    onClick={() => setIsDbConfigOpen(!isDbConfigOpen)}
-                    className="inline-flex items-center gap-2 text-xs font-bold text-gray-650 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 py-2 px-3.5 rounded-xl transition-all shadow-sm cursor-pointer"
-                  >
-                    <Server className="w-3.5 h-3.5 text-gray-500" />
-                    {isDbConfigOpen ? 'Tutup Tetapan DB' : 'Urus Sambungan Supabase'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Supabase Connection Settings Card */}
-              {isDbConfigOpen && (
-                <div className="mb-6 p-6 bg-white border border-blue-100 rounded-3xl flex flex-col gap-4 shadow-[0_4px_20px_rgba(0,0,0,0.03)] border-t-[5px] border-t-blue-500 animate-fade-in" id="supabase-config-card">
-                  <div className="flex items-center gap-2.5">
-                    <Database className="w-5.5 h-5.5 text-blue-600" />
-                    <h3 className="font-bold text-lg text-gray-950">Konfigurasi Sambungan Supabase</h3>
-                  </div>
-                  <p className="text-sm leading-relaxed text-gray-650">
-                    Penyelarasan awan memerlukan pangkalan data Supabase. Memandangkan tiada kunci dibaca dari fail persekitaran pasang-siaga, anda boleh memasukkannya secara terus di sini. Data tempatan anda yang telah ditaip tidak akan hilang, sebaliknya ia akan dipindahkan secara automatik ke dalam database Supabase anda apabila sambungan berjaya disiapkan!
-                  </p>
-
-                  <form onSubmit={handleSaveDbSettings} className="space-y-4 pt-2">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 font-mono">SUPABASE URL</label>
-                        <input 
-                          type="url" 
-                          value={dbUrlInput} 
-                          onChange={(e) => setDbUrlInput(e.target.value)}
-                          placeholder="Contoh: https://xyz.supabase.co" 
-                          className="w-full bg-gray-50 border border-gray-250 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner font-mono text-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-700 uppercase tracking-wider mb-1.5 font-mono">SUPABASE PUBLIC ANON KEY</label>
-                        <input 
-                          type="text" 
-                          value={dbAnonInput} 
-                          onChange={(e) => setDbAnonInput(e.target.value)}
-                          placeholder="Pelekat (Paste) anon public key di sini" 
-                          className="w-full bg-gray-50 border border-gray-250 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-blue-500 focus:bg-white transition-all shadow-inner font-mono text-gray-800"
-                        />
-                      </div>
-                    </div>
-
-                    {dbSettingStatus && (
-                      <div className={`p-3 rounded-xl text-xs font-semibold font-mono ${dbSettingStatus.startsWith('Ralat') ? 'bg-red-50 border border-red-150 text-red-800' : 'bg-green-50 border border-green-150 text-green-800'}`}>
-                        {dbSettingStatus}
-                      </div>
-                    )}
-
-                    <div className="flex flex-wrap items-center gap-3 pt-1">
-                      <button 
-                        type="submit" 
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-5 rounded-xl transition-all shadow-md active:scale-95 cursor-pointer text-sm"
-                      >
-                        Simpan & Pasang Sambungan
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={handleResetDbSettings}
-                        className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 px-4 rounded-xl transition-all cursor-pointer text-sm"
-                      >
-                        Kosongkan (Reset ke Tempatan)
-                      </button>
-                      <a 
-                        href="https://supabase.com" 
-                        target="_blank" 
-                        referrerPolicy="no-referrer"
-                        className="text-xs font-semibold text-blue-600 hover:underline inline-flex items-center gap-1 ml-auto"
-                      >
-                        Portal Supabase.com ↗
-                      </a>
-                    </div>
-                  </form>
-
-                  <div className="mt-4 border-t border-gray-100 pt-4">
-                    <h4 className="font-bold text-xs text-gray-700 uppercase tracking-wider mb-2 font-mono">Langkah-langkah Mudah:</h4>
-                    <ol className="list-decimal list-inside text-xs text-gray-500 space-y-1 pl-1 leading-relaxed">
-                      <li>Daftar masuk di <b>Supabase</b> dan cipta satu Projek Baru.</li>
-                      <li>Ambil <b>Project URL</b> dan <b>Anon API key</b> dari halaman Settings &gt; API.</li>
-                      <li>Tampalkan kunci tersebut di atas dan klik <b>Simpan & Pasang Sambungan</b>.</li>
-                      <li>Pergi ke Supabase <b>SQL Editor</b>, cipta satu kueri baru (New Query), dan jalankan <b>Skrip SQL Migrasi</b> di bawah untuk mewujudkan jadual sistem secara automatik.</li>
-                    </ol>
-                  </div>
-                </div>
-              )}
-
-              {firebaseError && (
-                <div className="mb-6 p-5 bg-red-50 border border-red-200 rounded-2xl flex flex-col gap-3 shadow-sm text-red-800 animate-fade-in" id="supabase-conn-error">
-                  <div className="flex items-center gap-2 font-bold text-base text-red-900">
-                    <span>⚠️ Sambungan Pangkalan Data Supabase</span>
-                  </div>
-                  <p className="text-sm leading-relaxed">{firebaseError}</p>
-
-                  {/* Show SQL Migration console if table is missing */}
-                  {firebaseError.includes('school_data') && (
-                    <div className="mt-3 bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-x-auto relative shadow-inner">
-                      <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800 text-[10px] text-slate-400 select-none">
-                        <span>SUPABASE SQL MIGRATION EDITOR</span>
-                        <button 
-                          onClick={() => {
-                            navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
-                            alert("Skrip SQL telah disalin ke papan klip!");
-                          }} 
-                          className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1 px-2.5 rounded transition-colors cursor-pointer select-all"
-                        >
-                          Salin SQL
-                        </button>
-                      </div>
-                      <pre className="text-slate-300 leading-relaxed whitespace-pre">{SQL_MIGRATION_SCRIPT}</pre>
-                    </div>
-                  )}
-                  
-                  <p className="text-xs text-red-500 font-mono">Sila pastikan Environment Variables Supabase <b>NEXT_PUBLIC_SUPABASE_URL</b> dan <b>NEXT_PUBLIC_SUPABASE_ANON_KEY</b> telah ditetapkan dengan betul.</p>
-                </div>
-              )}
-            </>
-          )}
-
           {saveStatus === 'error' && saveErrorMessage && (
             <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col gap-2 shadow-sm text-amber-900" id="supabase-save-error">
               <div className="flex items-center gap-2 font-bold text-base">

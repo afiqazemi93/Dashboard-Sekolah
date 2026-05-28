@@ -1,45 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Retrieve Supabase credentials with various fallback options (Vercel and Vite)
-const getSupabaseConfig = () => {
-  const envUrl = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_SUPABASE_URL : undefined;
-  const envAnonKey = typeof process !== 'undefined' && process.env ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY : undefined;
-
-  const viteMetaEnv = (import.meta as any).env;
-  const viteUrl = viteMetaEnv?.VITE_SUPABASE_URL || viteMetaEnv?.NEXT_PUBLIC_SUPABASE_URL;
-  const viteAnonKey = viteMetaEnv?.VITE_SUPABASE_ANON_KEY || viteMetaEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  // Read developer/user custom keys from localStorage as a dynamic alternative
-  let localUrl = '';
-  let localAnonKey = '';
-  try {
-    if (typeof window !== 'undefined' && window.localStorage) {
-      localUrl = window.localStorage.getItem('custom_supabase_url') || '';
-      localAnonKey = window.localStorage.getItem('custom_supabase_anon_key') || '';
-    }
-  } catch (e) {}
-
-  // Use defined env variables, or custom localStorage configuration, or default empty strings
-  let supabaseUrl = envUrl || viteUrl || localUrl || '';
-  const supabaseAnonKey = envAnonKey || viteAnonKey || localAnonKey || '';
-
-  // Sanitize the URL if it contains trailing paths or slashes (e.g. /rest/v1/ or /)
-  if (supabaseUrl) {
-    supabaseUrl = supabaseUrl.replace(/\/rest\/v1\/?$/, '').replace(/\/$/, '');
-  }
-
-  return { supabaseUrl, supabaseAnonKey };
-};
-
-const { supabaseUrl, supabaseAnonKey } = getSupabaseConfig();
+// Hardcoded Supabase configuration for Vercel production as requested
+const supabaseUrl = 'https://vmydujwojodpazbrhhri.supabase.co';
+const supabaseAnonKey = 'sb_publishable_tbsh0CXiArKRZ1Nd7iROwg_beqo6r93';
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
 // Initialize Supabase Client
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder-url.supabase.co',
-  supabaseAnonKey || 'placeholder-anon-key'
-);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 /**
  * Upload details/images to Supabase Storage.
