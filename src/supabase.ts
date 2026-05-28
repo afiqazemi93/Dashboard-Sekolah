@@ -9,9 +9,19 @@ const getSupabaseConfig = () => {
   const viteUrl = viteMetaEnv?.VITE_SUPABASE_URL || viteMetaEnv?.NEXT_PUBLIC_SUPABASE_URL;
   const viteAnonKey = viteMetaEnv?.VITE_SUPABASE_ANON_KEY || viteMetaEnv?.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Use defined env variables, or default empty strings to prevent startup initialization failure
-  let supabaseUrl = envUrl || viteUrl || '';
-  const supabaseAnonKey = envAnonKey || viteAnonKey || '';
+  // Read developer/user custom keys from localStorage as a dynamic alternative
+  let localUrl = '';
+  let localAnonKey = '';
+  try {
+    if (typeof window !== 'undefined' && window.localStorage) {
+      localUrl = window.localStorage.getItem('custom_supabase_url') || '';
+      localAnonKey = window.localStorage.getItem('custom_supabase_anon_key') || '';
+    }
+  } catch (e) {}
+
+  // Use defined env variables, or custom localStorage configuration, or default empty strings
+  let supabaseUrl = envUrl || viteUrl || localUrl || '';
+  const supabaseAnonKey = envAnonKey || viteAnonKey || localAnonKey || '';
 
   // Sanitize the URL if it contains trailing paths or slashes (e.g. /rest/v1/ or /)
   if (supabaseUrl) {
