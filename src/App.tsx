@@ -23,6 +23,21 @@ import { motion, AnimatePresence } from 'motion/react';
 // Cache TTL config (saving egress): 3 minutes (180,000 milliseconds)
 const CACHE_TTL = 180000;
 
+const defaultPentadbirs = [
+  { id: 'p1', name: 'En. Ahmad Bin Abu', subject: 'Guru Besar', grade: 'DG54', photoUrl: 'https://i.pravatar.cc/150?img=11' },
+  { id: 'p2', name: 'Pn. Siti Binti Ali', subject: 'PK Pentadbiran', grade: 'DG52', photoUrl: 'https://i.pravatar.cc/150?img=5' },
+  { id: 'p3', name: 'En. Razak Bin Osman', subject: 'PK HEM', grade: 'DG48', photoUrl: 'https://i.pravatar.cc/150?img=8' },
+  { id: 'p4', name: 'En. Kumar a/l Raj', subject: 'PK Kokurikulum', grade: 'DG48', photoUrl: 'https://i.pravatar.cc/150?img=12' },
+];
+
+const defaultAkpStaffs = [
+  { id: 'a1', name: 'Pn. Aminah Binti Hassan', subject: 'Ketua Pembantu Tadbir', grade: 'N22', photoUrl: 'https://i.pravatar.cc/150?img=47' },
+  { id: 'a2', name: 'En. Rosli Bin Ibrahim', subject: 'Pembantu Tadbir', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=68' },
+  { id: 'a3', name: 'Pn. Noraini Binti Zakaria', subject: 'Pembantu Operasi', grade: 'N11', photoUrl: 'https://i.pravatar.cc/150?img=36' },
+  { id: 'a4', name: 'En. Mohd Ridzuan Bin Ali', subject: 'Penyelia Asrama', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=53' },
+  { id: 'a5', name: 'Pn. Kartini Binti Ismail', subject: 'Pembantu Pengurusan Murid', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=58' },
+];
+
 // Fallback initial data with student and class headcounts definitions for total persistent coverage
 const fallbackDetails: SchoolDetails = {
   name: 'Sekolah Kebangsaan Batu Lanchang',
@@ -61,9 +76,9 @@ const fallbackDetails: SchoolDetails = {
     { id: '3', date: '2026-05-05', type: 'holiday', title: 'Cuti Aktiviti', desc: 'Cuti Ganti' },
     { id: '4', date: '2026-05-15', type: 'holiday', title: 'Cuti Sokongan', desc: 'Hari Belia' },
   ],
-  teachers: [],
-  pentadbirs: [],
-  akpStaffs: [],
+  teachers: generateDefaultTeachers(),
+  pentadbirs: defaultPentadbirs,
+  akpStaffs: defaultAkpStaffs,
   classData: [
     { id: 'p1', className: 'Prasekolah Bestari', males: 12, females: 13 },
     { id: '1b', className: '1 Bestari', males: 18, females: 20 },
@@ -254,8 +269,12 @@ export default function App() {
         }
       } else {
         // If no documents exist in Cloud Firestore, keep using our local frontend states without overwrite.
-        console.info("Firestore DB is empty or fresh. Using local presets.");
+        console.info("Firestore DB is empty or fresh. Seeding Firestore with local edits or presets...");
         localStorage.setItem('skbl_details_fetched_at', Date.now().toString());
+        
+        // Seed Firestore database so that deployed versions have full synchronization instantly!
+        const initialDetailsToSeed = localData || fallbackDetails;
+        await handleSaveDetails(initialDetailsToSeed);
       }
     } catch (err: any) {
       console.warn("Failed to fetch latest school details asynchronously from Firebase:", err);
@@ -267,7 +286,7 @@ export default function App() {
     fetchSchoolDetails();
   }, []);
 
-  const handleSaveDetails = async (updatedDetails: SchoolDetails) => {
+  async function handleSaveDetails(updatedDetails: SchoolDetails) {
     const oldDetails = schoolDetails;
     const timestampedDetails = { ...updatedDetails, updatedAt: Date.now() };
     setSchoolDetails(timestampedDetails);
