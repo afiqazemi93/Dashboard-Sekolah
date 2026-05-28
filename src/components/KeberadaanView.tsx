@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { UserCheck, Search, ChevronLeft, ChevronRight, ExternalLink, Users, UserMinus, Percent } from 'lucide-react';
 import { SchoolDetails, KeberadaanRecord, Teacher } from '../types';
-import { db, handleFirestoreError, OperationType } from '../firebase';
-import { doc, getDoc } from 'firebase/firestore';
+import { getDocument } from '../supabase';
 
 interface KeberadaanViewProps {
   details: SchoolDetails;
@@ -115,14 +114,10 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
         }
       }
 
-      // Option B: Fetch from Firestore
-      const keberadaanDocRef = doc(db, 'school', 'keberadaan');
-      const snap = await getDoc(keberadaanDocRef);
-      if (snap.exists()) {
-        const data = snap.data();
-        if (data.keberadaanRecords) {
-          setRecords(data.keberadaanRecords);
-        }
+      // Option B: Fetch from Supabase
+      const data = await getDocument('keberadaan');
+      if (data && data.keberadaanRecords) {
+        setRecords(data.keberadaanRecords);
       }
     } catch (e) {
       console.warn("Auto-refresh keberadaan failed:", e);
@@ -135,7 +130,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
 
     const interval = setInterval(() => {
       ambilDataLive();
-    }, 10000);
+    }, 300000);
 
     return () => clearInterval(interval);
   }, [details.keberadaanGasUrl]); // Re-bind if url changes

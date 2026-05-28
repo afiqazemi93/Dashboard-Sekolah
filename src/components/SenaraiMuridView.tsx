@@ -10,59 +10,10 @@ interface SenaraiMuridViewProps {
 
 export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewProps) {
   // 1. Class headcounts data
-  const [classData, setClassData] = useState<ClassHeadcount[]>(() => {
-    if (details.classData && details.classData.length > 0) {
-      return details.classData;
-    }
-    const saved = localStorage.getItem('skbl_class_headcounts');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [
-      { id: 'p1', className: 'Prasekolah Bestari', males: 12, females: 13 },
-      { id: '1b', className: '1 Bestari', males: 18, females: 20 },
-      { id: '1p', className: '1 Pintar', males: 15, females: 16 },
-      { id: '2b', className: '2 Bestari', males: 14, females: 18 },
-      { id: '2p', className: '2 Pintar', males: 16, females: 15 },
-      { id: '3b', className: '3 Bestari', males: 17, females: 19 },
-      { id: '3p', className: '3 Pintar', males: 15, females: 14 },
-      { id: '4b', className: '4 Bestari', males: 20, females: 18 },
-      { id: '4p', className: '4 Pintar', males: 12, females: 15 },
-      { id: '5b', className: '5 Bestari', males: 16, females: 17 },
-      { id: '5p', className: '5 Pintar', males: 15, females: 15 },
-      { id: '6b', className: '6 Bestari', males: 19, females: 21 },
-      { id: '6p', className: '6 Pintar', males: 14, females: 16 },
-    ];
-  });
+  const [classData, setClassData] = useState<ClassHeadcount[]>(() => details.classData || []);
 
   // 2. Student lists
-  const [students, setStudents] = useState<StudentRecord[]>(() => {
-    if (details.students && details.students.length > 0) {
-      return details.students;
-    }
-    const saved = localStorage.getItem('skbl_students_roster');
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [
-      { id: 's1', name: 'Muhammad Aliff Farhan Bin Azmi', idNumber: 'SKBL-2024-001', className: '6 Bestari', gender: 'Lelaki' },
-      { id: 's2', name: 'Nur Alya Qistina Binti Mohd Faizal', idNumber: 'SKBL-2024-002', className: '6 Bestari', gender: 'Perempuan' },
-      { id: 's3', name: 'Adam Harith Bin Norazam', idNumber: 'SKBL-2024-003', className: '5 Bestari', gender: 'Lelaki' },
-      { id: 's4', name: 'Eshaan Pillai a/l Ravindran', idNumber: 'SKBL-2024-004', className: '4 Bestari', gender: 'Lelaki' },
-      { id: 's5', name: 'Siti Nuraisyah Binti Abdullah', idNumber: 'SKBL-2024-005', className: '3 Pintar', gender: 'Perempuan' },
-      { id: 's6', name: 'Lim Wei Han', idNumber: 'SKBL-2024-006', className: '5 Pintar', gender: 'Lelaki' },
-      { id: 's7', name: 'Yasmin Humaira Binti Khairul anuar', idNumber: 'SKBL-2024-007', className: '2 Bestari', gender: 'Perempuan' },
-      { id: 's8', name: 'Teh Jia Ling', idNumber: 'SKBL-2024-008', className: '1 Bestari', gender: 'Perempuan' },
-    ];
-  });
+  const [students, setStudents] = useState<StudentRecord[]>(() => details.students || []);
 
   // React to prop updates from Firestore
   useEffect(() => {
@@ -76,15 +27,6 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       setStudents(details.students);
     }
   }, [details.students]);
-
-  // Saving states
-  useEffect(() => {
-    localStorage.setItem('skbl_class_headcounts', JSON.stringify(classData));
-  }, [classData]);
-
-  useEffect(() => {
-    localStorage.setItem('skbl_students_roster', JSON.stringify(students));
-  }, [students]);
 
   // Editing headcount states
   const [editingId, setEditingId] = useState<string | null>(null);

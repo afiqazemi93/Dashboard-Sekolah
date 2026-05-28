@@ -4,8 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { collection, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, uploadBase64ToStorage } from './firebase';
+import { getDocument, setDocument, uploadBase64ToStorage, isSupabaseConfigured, SQL_MIGRATION_SCRIPT } from './supabase';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
 import { MaklumatSekolahView } from './components/MaklumatSekolahView';
@@ -23,20 +22,8 @@ import { motion, AnimatePresence } from 'motion/react';
 // Cache TTL config (saving egress): 3 minutes (180,000 milliseconds)
 const CACHE_TTL = 180000;
 
-const defaultPentadbirs = [
-  { id: 'p1', name: 'En. Ahmad Bin Abu', subject: 'Guru Besar', grade: 'DG54', photoUrl: 'https://i.pravatar.cc/150?img=11' },
-  { id: 'p2', name: 'Pn. Siti Binti Ali', subject: 'PK Pentadbiran', grade: 'DG52', photoUrl: 'https://i.pravatar.cc/150?img=5' },
-  { id: 'p3', name: 'En. Razak Bin Osman', subject: 'PK HEM', grade: 'DG48', photoUrl: 'https://i.pravatar.cc/150?img=8' },
-  { id: 'p4', name: 'En. Kumar a/l Raj', subject: 'PK Kokurikulum', grade: 'DG48', photoUrl: 'https://i.pravatar.cc/150?img=12' },
-];
-
-const defaultAkpStaffs = [
-  { id: 'a1', name: 'Pn. Aminah Binti Hassan', subject: 'Ketua Pembantu Tadbir', grade: 'N22', photoUrl: 'https://i.pravatar.cc/150?img=47' },
-  { id: 'a2', name: 'En. Rosli Bin Ibrahim', subject: 'Pembantu Tadbir', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=68' },
-  { id: 'a3', name: 'Pn. Noraini Binti Zakaria', subject: 'Pembantu Operasi', grade: 'N11', photoUrl: 'https://i.pravatar.cc/150?img=36' },
-  { id: 'a4', name: 'En. Mohd Ridzuan Bin Ali', subject: 'Penyelia Asrama', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=53' },
-  { id: 'a5', name: 'Pn. Kartini Binti Ismail', subject: 'Pembantu Pengurusan Murid', grade: 'N19', photoUrl: 'https://i.pravatar.cc/150?img=58' },
-];
+const defaultPentadbirs: any[] = [];
+const defaultAkpStaffs: any[] = [];
 
 // Fallback initial data with student and class headcounts definitions for total persistent coverage
 const fallbackDetails: SchoolDetails = {
@@ -49,14 +36,14 @@ const fallbackDetails: SchoolDetails = {
   facebook: 'https://facebook.com/skblofficial',
   youtube: 'https://youtube.com/@skbatulanchang',
   tiktok: 'https://tiktok.com/@skbatulanchang',
-  guruBesar: { name: 'En. Ahmad Bin Abu', photoUrl: 'https://i.pravatar.cc/150?img=11' },
-  pkPentadbiran: { name: 'Pn. Siti Binti Ali', photoUrl: 'https://i.pravatar.cc/150?img=5' },
-  pkHem: { name: 'En. Razak Bin Osman', photoUrl: 'https://i.pravatar.cc/150?img=8' },
-  pkKokurikulum: { name: 'En. Kumar a/l Raj', photoUrl: 'https://i.pravatar.cc/150?img=12' },
+  guruBesar: { name: '', photoUrl: '' },
+  pkPentadbiran: { name: '', photoUrl: '' },
+  pkHem: { name: '', photoUrl: '' },
+  pkKokurikulum: { name: '', photoUrl: '' },
   session: 'Pagi sahaja',
   totalStudents: 846,
-  totalTeachers: 69,
-  totalStaff: 5,
+  totalTeachers: 0,
+  totalStaff: 0,
   totalClasses: 28,
   district: 'Timur Laut',
   state: 'Pulau Pinang',
@@ -117,21 +104,8 @@ export default function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [saveErrorMessage, setSaveErrorMessage] = useState<string | null>(null);
 
-  // Synchronous local-first state initialization
-  const [schoolDetails, setSchoolDetails] = useState<SchoolDetails>(() => {
-    try {
-      const local = localStorage.getItem('skbl_details');
-      if (local) {
-        const parsed = JSON.parse(local);
-        if (parsed && typeof parsed === 'object' && parsed.name) {
-          return parsed as SchoolDetails;
-        }
-      }
-    } catch (e) {
-      console.warn("Cached details parsing failed, falling back", e);
-    }
-    return fallbackDetails;
-  });
+  // Synchronous database-first state initialization
+  const [schoolDetails, setSchoolDetails] = useState<SchoolDetails>(fallbackDetails);
 
   const mainRef = React.useRef<HTMLElement>(null);
 
@@ -142,171 +116,209 @@ export default function App() {
   }, [activeTab]);
 
   const fetchSchoolDetails = async () => {
-    let localData: SchoolDetails | null = null;
-    let lastFetched = 0;
-
-    try {
-      const local = localStorage.getItem('skbl_details');
-      if (local) {
-        localData = JSON.parse(local) as SchoolDetails;
-      }
-      const lastFetchedStr = localStorage.getItem('skbl_details_fetched_at');
-      if (lastFetchedStr) {
-        lastFetched = parseInt(lastFetchedStr, 10);
-      }
-    } catch (e) {}
-
-    const now = Date.now();
-    // If we already have local data and it was fetched within TTL limit, skip extra queries, saving egress/reads!
-    if (localData && (now - lastFetched < CACHE_TTL)) {
-      console.log("Skipped Firestore reads - fresh cache within TTL.");
-      return;
-    }
-
     // If network is offline, bypass quietly
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       return;
     }
 
-    try {
-      const detailsDocRef = doc(db, 'school', 'details');
-      const teachersDocRef = doc(db, 'school', 'teachers');
-      const mediaLogoDocRef = doc(db, 'school', 'media_logo');
-      const mediaSongDocRef = doc(db, 'school', 'media_song');
-      const mediaPlanDocRef = doc(db, 'school', 'media_plan');
-      const studentsDocRef = doc(db, 'school', 'students');
-      const calendarDocRef = doc(db, 'school', 'calendar');
-      const keberadaanDocRef = doc(db, 'school', 'keberadaan');
+    if (!isSupabaseConfigured) {
+      setFirebaseError("Sila konfigurasikan NEXT_PUBLIC_SUPABASE_URL dan NEXT_PUBLIC_SUPABASE_ANON_KEY di fail persekitaran (.env.local) untuk mendayakan penyelarasan pangkalan data Supabase.");
+      return;
+    }
 
+    try {
       // Fetch all partitions in parallel (ultra fast loading)
       const [
-        detailsSnap,
-        teachersSnap,
-        mediaLogoSnap,
-        mediaSongSnap,
-        mediaPlanSnap,
-        studentsSnap,
-        calendarSnap,
-        keberadaanSnap
+        detailsData,
+        teachersData,
+        mediaLogoData,
+        mediaSongData,
+        mediaPlanData,
+        studentsData,
+        calendarData,
+        keberadaanData
       ] = await Promise.all([
-        getDoc(detailsDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/details'); return null; }),
-        getDoc(teachersDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/teachers'); return null; }),
-        getDoc(mediaLogoDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/media_logo'); return null; }),
-        getDoc(mediaSongDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/media_song'); return null; }),
-        getDoc(mediaPlanDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/media_plan'); return null; }),
-        getDoc(studentsDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/students'); return null; }),
-        getDoc(calendarDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/calendar'); return null; }),
-        getDoc(keberadaanDocRef).catch(err => { handleFirestoreError(err, OperationType.GET, 'school/keberadaan'); return null; })
+        getDocument('details').catch(err => err),
+        getDocument('teachers').catch(err => err),
+        getDocument('media_logo').catch(err => err),
+        getDocument('media_song').catch(err => err),
+        getDocument('media_plan').catch(err => err),
+        getDocument('students').catch(err => err),
+        getDocument('calendar').catch(err => err),
+        getDocument('keberadaan').catch(err => err)
       ]);
 
-      // Check if any query failed (they returned null in `.catch`)
-      const hasErrors = [
-        detailsSnap,
-        teachersSnap,
-        mediaLogoSnap,
-        mediaSongSnap,
-        mediaPlanSnap,
-        studentsSnap,
-        calendarSnap,
-        keberadaanSnap
-      ].some(snap => snap === null);
+      // Check if any error indicates a missing table
+      const isTableMissing = [
+        detailsData, teachersData, mediaLogoData, mediaSongData,
+        mediaPlanData, studentsData, calendarData, keberadaanData
+      ].some(data => {
+        if (data && typeof data === 'object' && (data as any).message === 'TABLE_MISSING') {
+          return true;
+        }
+        if (data instanceof Error && data.message === 'TABLE_MISSING') {
+          return true;
+        }
+        return false;
+      });
 
-      if (hasErrors) {
-        setFirebaseError("Gagal berhubung dengan Firebase Firestore. Sila periksa samada pangkalan data anda wujud atau periksa tatapan Security Rules serta konfigurasi Environment Variables Firebase.");
+      if (isTableMissing) {
+        setFirebaseError("Jadual 'school_data' tidak ditemui di pangkalan data Supabase anda. Sila mulakan jadual ini menggunakan skrip SQL migrasi yang betul.");
         return;
-      } else {
-        setFirebaseError(null); // Clear errors on success
       }
-      
-      const detailsDocExists = detailsSnap && detailsSnap.exists();
-      const teachersDocExists = teachersSnap && teachersSnap.exists();
-      const mediaLogoDocExists = mediaLogoSnap && mediaLogoSnap.exists();
-      const mediaSongDocExists = mediaSongSnap && mediaSongSnap.exists();
-      const mediaPlanDocExists = mediaPlanSnap && mediaPlanSnap.exists();
-      const studentsDocExists = studentsSnap && studentsSnap.exists();
-      const calendarDocExists = calendarSnap && calendarSnap.exists();
-      const keberadaanDocExists = keberadaanSnap && keberadaanSnap.exists();
 
-      const dbExists = detailsDocExists || teachersDocExists || mediaLogoDocExists || mediaSongDocExists || mediaPlanDocExists || studentsDocExists || calendarDocExists || keberadaanDocExists;
-      
-      if (dbExists) {
-        let data: SchoolDetails = { ...fallbackDetails };
-        
-        if (detailsSnap && detailsSnap.exists()) {
-          data = { ...data, ...detailsSnap.data() as SchoolDetails };
-        }
-        
-        if (teachersSnap && teachersSnap.exists()) {
-          const tData = teachersSnap.data();
-          data.teachers = tData.teachers || [];
-          data.pentadbirs = tData.pentadbirs || [];
-          data.akpStaffs = tData.akpStaffs || [];
-        }
-        
-        if (mediaLogoSnap && mediaLogoSnap.exists()) {
-          data.logoUrl = mediaLogoSnap.data().logoUrl || "";
-        }
-        
-        if (mediaSongSnap && mediaSongSnap.exists()) {
-          const sData = mediaSongSnap.data();
-          data.schoolSongLyrics = sData.schoolSongLyrics || "";
-          data.schoolSongAudioUrl = sData.schoolSongAudioUrl || "";
-        }
-        
-        if (mediaPlanSnap && mediaPlanSnap.exists()) {
-          data.schoolPlanImageUrl = mediaPlanSnap.data().schoolPlanImageUrl || "";
-        }
+      // Check for any other network or query issues
+      const anyOtherErrors = [
+        detailsData, teachersData, mediaLogoData, mediaSongData,
+        mediaPlanData, studentsData, calendarData, keberadaanData
+      ].some(data => data instanceof Error);
 
-        if (studentsSnap && studentsSnap.exists()) {
-          const stData = studentsSnap.data();
-          data.classData = stData.classData || [];
-          data.students = stData.students || [];
-        }
+      if (anyOtherErrors) {
+        const firstErr = [
+          detailsData, teachersData, mediaLogoData, mediaSongData,
+          mediaPlanData, studentsData, calendarData, keberadaanData
+        ].find(data => data instanceof Error) as Error;
+        setFirebaseError(`Gagal berhubung dengan Supabase: ${firstErr?.message || 'Ralat tidak diketahui'}`);
+        return;
+      }
 
-        if (calendarSnap && calendarSnap.exists()) {
-          data.calendarEvents = calendarSnap.data().calendarEvents || [];
-        }
+      setFirebaseError(null); // Clear errors on success
 
-        if (keberadaanSnap && keberadaanSnap.exists()) {
-          const kData = keberadaanSnap.data();
-          data.keberadaanCachedData = kData.keberadaanCachedData || null;
-          data.keberadaanGasUrl = kData.keberadaanGasUrl || data.keberadaanGasUrl;
-          data.keberadaanSheetIdOrUrl = kData.keberadaanSheetIdOrUrl || data.keberadaanSheetIdOrUrl;
-          data.keberadaanSheetRange = kData.keberadaanSheetRange || data.keberadaanSheetRange;
-          data.keberadaanFormUrl = kData.keberadaanFormUrl || data.keberadaanFormUrl;
-          data.keberadaanRecords = kData.keberadaanRecords || [];
-        }
-        
-        const localTime = localData?.updatedAt || 0;
-        const fbTime = data.updatedAt || 0;
-        let activeDetails = data;
-        if (localData && localTime > fbTime) {
-          activeDetails = localData;
-        }
-        
-        setSchoolDetails(activeDetails);
-        try {
-          localStorage.setItem('skbl_details', JSON.stringify(activeDetails));
-          localStorage.setItem('skbl_details_fetched_at', Date.now().toString());
-        } catch (e) {
-          console.warn("Storage quota exceeded, unable to cache detailed fetch locally.");
-        }
-      } else {
-        // If no documents exist in Cloud Firestore, keep using our local frontend states without overwrite.
-        console.info("Firestore DB is empty or fresh. Seeding Firestore with local edits or presets...");
-        localStorage.setItem('skbl_details_fetched_at', Date.now().toString());
-        
-        // Seed Firestore database so that deployed versions have full synchronization instantly!
-        const initialDetailsToSeed = localData || fallbackDetails;
-        await handleSaveDetails(initialDetailsToSeed);
+      let data: SchoolDetails = { ...fallbackDetails };
+      const seedPromises: Promise<any>[] = [];
+
+      // 1. General Details
+      if (detailsData && !(detailsData instanceof Error)) {
+        data = { ...data, ...detailsData };
+      } else if (!detailsData) {
+        seedPromises.push(
+          setDocument('details', {
+            name: fallbackDetails.name,
+            code: fallbackDetails.code,
+            phone: fallbackDetails.phone,
+            address: fallbackDetails.address,
+            email: fallbackDetails.email,
+            facebook: fallbackDetails.facebook,
+            youtube: fallbackDetails.youtube,
+            tiktok: fallbackDetails.tiktok,
+            guruBesar: fallbackDetails.guruBesar,
+            pkPentadbiran: fallbackDetails.pkPentadbiran,
+            pkHem: fallbackDetails.pkHem,
+            pkKokurikulum: fallbackDetails.pkKokurikulum,
+            session: fallbackDetails.session,
+            totalStudents: fallbackDetails.totalStudents,
+            totalTeachers: 0,
+            totalStaff: 0,
+            totalClasses: fallbackDetails.totalClasses,
+            district: fallbackDetails.district,
+            state: fallbackDetails.state,
+            motto: fallbackDetails.motto,
+            vision: fallbackDetails.vision,
+            mission: fallbackDetails.mission,
+            keberadaanGasUrl: fallbackDetails.keberadaanGasUrl,
+            schoolSongLyrics: fallbackDetails.schoolSongLyrics
+          })
+        );
+      }
+
+      // 2. Teachers & Staff
+      if (teachersData && !(teachersData instanceof Error)) {
+        data.teachers = teachersData.teachers || [];
+        data.pentadbirs = teachersData.pentadbirs || [];
+        data.akpStaffs = teachersData.akpStaffs || [];
+      } else if (!teachersData) {
+        seedPromises.push(
+          setDocument('teachers', {
+            teachers: [],
+            pentadbirs: [],
+            akpStaffs: []
+          })
+        );
+      }
+
+      // 3. Media Logo
+      if (mediaLogoData && !(mediaLogoData instanceof Error)) {
+        data.logoUrl = mediaLogoData.logoUrl || fallbackDetails.logoUrl;
+      } else if (!mediaLogoData) {
+        seedPromises.push(setDocument('media_logo', { logoUrl: fallbackDetails.logoUrl }));
+      }
+
+      // 4. Media Song
+      if (mediaSongData && !(mediaSongData instanceof Error)) {
+        data.schoolSongLyrics = mediaSongData.schoolSongLyrics || fallbackDetails.schoolSongLyrics;
+        data.schoolSongAudioUrl = mediaSongData.schoolSongAudioUrl || "";
+      } else if (!mediaSongData) {
+        seedPromises.push(
+          setDocument('media_song', {
+            schoolSongLyrics: fallbackDetails.schoolSongLyrics,
+            schoolSongAudioUrl: ""
+          })
+        );
+      }
+
+      // 5. Media Plan
+      if (mediaPlanData && !(mediaPlanData instanceof Error)) {
+        data.schoolPlanImageUrl = mediaPlanData.schoolPlanImageUrl || "";
+      } else if (!mediaPlanData) {
+        seedPromises.push(setDocument('media_plan', { schoolPlanImageUrl: "" }));
+      }
+
+      // 6. Students & Class headcounts
+      if (studentsData && !(studentsData instanceof Error)) {
+        data.classData = studentsData.classData && studentsData.classData.length > 0 ? studentsData.classData : fallbackDetails.classData;
+        data.students = studentsData.students && studentsData.students.length > 0 ? studentsData.students : fallbackDetails.students;
+      } else if (!studentsData) {
+        seedPromises.push(
+          setDocument('students', {
+            classData: fallbackDetails.classData,
+            students: fallbackDetails.students
+          })
+        );
+      }
+
+      // 7. Calendar
+      if (calendarData && !(calendarData instanceof Error)) {
+        data.calendarEvents = calendarData.calendarEvents || fallbackDetails.calendarEvents;
+      } else if (!calendarData) {
+        seedPromises.push(setDocument('calendar', { calendarEvents: fallbackDetails.calendarEvents }));
+      }
+
+      // 8. Keberadaan
+      if (keberadaanData && !(keberadaanData instanceof Error)) {
+        data.keberadaanCachedData = keberadaanData.keberadaanCachedData || null;
+        data.keberadaanGasUrl = keberadaanData.keberadaanGasUrl || fallbackDetails.keberadaanGasUrl;
+        data.keberadaanSheetIdOrUrl = keberadaanData.keberadaanSheetIdOrUrl || "";
+        data.keberadaanSheetRange = keberadaanData.keberadaanSheetRange || "";
+        data.keberadaanFormUrl = keberadaanData.keberadaanFormUrl || "";
+        data.keberadaanRecords = keberadaanData.keberadaanRecords || [];
+      } else if (!keberadaanData) {
+        seedPromises.push(
+          setDocument('keberadaan', {
+            keberadaanCachedData: JSON.stringify([]),
+            keberadaanGasUrl: fallbackDetails.keberadaanGasUrl || "",
+            keberadaanSheetIdOrUrl: "",
+            keberadaanSheetRange: "",
+            keberadaanFormUrl: "",
+            keberadaanRecords: []
+          })
+        );
+      }
+
+      setSchoolDetails(data);
+
+      if (seedPromises.length > 0) {
+        console.info(`Supabase DB partially empty. Seeding ${seedPromises.length} missing partitions in background...`);
+        Promise.all(seedPromises).catch(err => {
+          console.warn("Background partition seeding failed:", err);
+        });
       }
     } catch (err: any) {
-      setFirebaseError(`Gagal membaca data dari Firebase: ${err?.message || err}`);
-      console.warn("Failed to fetch latest school details asynchronously from Firebase:", err);
+      setFirebaseError(`Gagal membaca data dari Supabase: ${err?.message || err}`);
+      console.warn("Failed to fetch latest school details asynchronously from Supabase:", err);
     }
   };
 
-  // Load from Firebase asynchronously in background WITHOUT full-screen blocking re-renders
+  // Load from Supabase asynchronously in background WITHOUT full-screen blocking re-renders
   useEffect(() => {
     fetchSchoolDetails();
   }, []);
@@ -317,29 +329,8 @@ export default function App() {
     setSaveStatus('saving');
     setSaveErrorMessage(null);
     setSchoolDetails(timestampedDetails);
-    
-    try {
-      localStorage.setItem('skbl_details', JSON.stringify(timestampedDetails)); // Keep local as a fast fallback cache
-      localStorage.setItem('skbl_details_fetched_at', Date.now().toString()); // Refresh cache freshness
-    } catch (e) {
-      console.warn("Storage quota exceeded, unable to cache to local storage but proceeding with Firebase sync.");
-    }
-
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      console.info("Offline State: Saved data successfully to local cache.");
-      return;
-    }
 
     try {
-      const detailsDocRef = doc(db, 'school', 'details');
-      const teachersDocRef = doc(db, 'school', 'teachers');
-      const mediaLogoDocRef = doc(db, 'school', 'media_logo');
-      const mediaSongDocRef = doc(db, 'school', 'media_song');
-      const mediaPlanDocRef = doc(db, 'school', 'media_plan');
-      const studentsDocRef = doc(db, 'school', 'students');
-      const calendarDocRef = doc(db, 'school', 'calendar');
-      const keberadaanDocRef = doc(db, 'school', 'keberadaan');
-
       const { 
         teachers, pentadbirs, akpStaffs, 
         logoUrl, 
@@ -357,11 +348,14 @@ export default function App() {
       };
 
       // Helper to log errors and throw them so that the save operation bubbles up failures correctly
-      const safeFirestoreWrite = async (operation: () => Promise<void>, path: string) => {
+      const safeSupabaseWrite = async (operation: () => Promise<void>, path: string) => {
         try {
           await operation();
         } catch (err: any) {
-          console.error(`Failed to save ${path} to Firestore:`, err);
+          if (err?.message === "TABLE_MISSING") {
+            throw new Error("TABLE_MISSING");
+          }
+          console.error(`Failed to save ${path} to Supabase:`, err);
           throw new Error(`Gagal menyimpan laluan '${path}' - ${err?.message || err}`);
         }
       };
@@ -422,36 +416,32 @@ export default function App() {
       timestampedDetails.logoUrl = finalLogoUrl;
       timestampedDetails.schoolPlanImageUrl = finalPlanUrl;
 
-      // Parallelize all Firestore write operations so the entire process runs in 1 RTT (round-trip time)
+      const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
+
+      // Parallelize all Supabase write operations so the entire process runs in 1 RTT (round-trip time)
       await Promise.all([
-        safeFirestoreWrite(() => setDoc(detailsDocRef, basicDataToSave, { merge: true }), 'school/details'),
-        safeFirestoreWrite(() => setDoc(teachersDocRef, { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp }, { merge: true }), 'school/teachers'),
-        safeFirestoreWrite(() => setDoc(mediaLogoDocRef, { logoUrl: finalLogoUrl }, { merge: true }), 'school/media_logo'),
-        safeFirestoreWrite(async () => {
+        safeSupabaseWrite(() => setDocument('details', basicDataToSave), 'school/details'),
+        safeSupabaseWrite(() => setDocument('teachers', { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp }), 'school/teachers'),
+        safeSupabaseWrite(() => setDocument('media_logo', { logoUrl: finalLogoUrl }), 'school/media_logo'),
+        safeSupabaseWrite(async () => {
           const audioStr = schoolSongAudioUrl || "";
           if (audioStr && audioStr.length > 1048000) {
              console.warn("Saiz fail audio terlalu besar");
              return;
           }
-          await setDoc(mediaSongDocRef, { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr }, { merge: true });
+          await setDocument('media_song', { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr });
         }, 'school/media_song'),
-        safeFirestoreWrite(() => setDoc(mediaPlanDocRef, { schoolPlanImageUrl: finalPlanUrl }, { merge: true }), 'school/media_plan'),
-        safeFirestoreWrite(() => setDoc(studentsDocRef, { classData: classData || [], students: students || [] }, { merge: true }), 'school/students'),
-        safeFirestoreWrite(() => setDoc(calendarDocRef, { calendarEvents: calendarEvents || [] }, { merge: true }), 'school/calendar'),
-        safeFirestoreWrite(async () => {
-          const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
-          if (kCache && kCache.length > 1048000) {
-            console.warn("Keberadaan data exceeds 1MB, trimming cache to save metadata integrity.");
-          }
-          await setDoc(keberadaanDocRef, { 
-            keberadaanCachedData: kCache,
-            keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
-            keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
-            keberadaanSheetRange: keberadaanSheetRange || "",
-            keberadaanFormUrl: keberadaanFormUrl || "",
-            keberadaanRecords: keberadaanRecords || []
-          }, { merge: true });
-        }, 'school/keberadaan')
+        safeSupabaseWrite(() => setDocument('media_plan', { schoolPlanImageUrl: finalPlanUrl }), 'school/media_plan'),
+        safeSupabaseWrite(() => setDocument('students', { classData: classData || [], students: students || [] }), 'school/students'),
+        safeSupabaseWrite(() => setDocument('calendar', { calendarEvents: calendarEvents || [] }), 'school/calendar'),
+        safeSupabaseWrite(() => setDocument('keberadaan', { 
+          keberadaanCachedData: kCache,
+          keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
+          keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
+          keberadaanSheetRange: keberadaanSheetRange || "",
+          keberadaanFormUrl: keberadaanFormUrl || "",
+          keberadaanRecords: keberadaanRecords || []
+        }), 'school/keberadaan')
       ]);
 
       // Everything saved successfully!
@@ -464,19 +454,16 @@ export default function App() {
 
     } catch (err: any) {
       const errMsg = err?.message || String(err);
-      if (errMsg.includes('offline') || !navigator.onLine) {
-        console.warn("Could not sync with Firebase database because the client is offline. Local cache updated.");
-        setSaveStatus('saved'); // Offline is self-healing in Firestore, mark as saved locally
-      } else {
-        console.error("Firebase Sync Failure:", err);
+      if (errMsg === 'TABLE_MISSING') {
         setSaveStatus('error');
-        setSaveErrorMessage(`Gagal selaraskan ke Firebase Firestore: ${errMsg}. Sila semak Security Rules pangkalan data.`);
+        setSaveErrorMessage("Jadual 'school_data' tidak ditemui di Supabase. Sila salin dan jalankan skrip SQL migrasi yang disediakan di bahagian atas halaman dashboard utama.");
+      } else {
+        console.error("Supabase Save Failure:", err);
+        setSaveStatus('error');
+        setSaveErrorMessage(`Gagal selaraskan ke Supabase: ${errMsg}. Sila semak sambungan rangkaian atau polisi RLS.`);
         
-        // Roll back the memory state and localStorage cache to prevent incorrect UI confirmation
+        // Roll back the memory state to prevent incorrect UI confirmation
         setSchoolDetails(oldDetails);
-        try {
-          localStorage.setItem('skbl_details', JSON.stringify(oldDetails));
-        } catch (storageErr) {}
       }
     }
   };
@@ -534,25 +521,64 @@ export default function App() {
         
         <main ref={mainRef} className="flex-1 px-4 sm:px-6 lg:px-8 pb-8 pt-4 lg:pt-7 overflow-y-auto w-full">
           {firebaseError && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex flex-col gap-2 shadow-sm text-red-800" id="firebase-conn-error">
-              <div className="flex items-center gap-2 font-bold text-base">
-                <span>⚠️ Amaran Sambungan Firebase</span>
+            <div className="mb-6 p-5 bg-red-50 border border-red-200 rounded-2xl flex flex-col gap-3 shadow-sm text-red-800 animate-fade-in" id="supabase-conn-error">
+              <div className="flex items-center gap-2 font-bold text-base text-red-900">
+                <span>⚠️ Sambungan Pangkalan Data Supabase</span>
               </div>
               <p className="text-sm leading-relaxed">{firebaseError}</p>
-              <p className="text-xs text-red-500 font-mono mt-1">Sila periksa samada Environment Variables Firebase (NEXT_PUBLIC_FIREBASE_...) sudah dikonfigurasikan dengan betul di Vercel.</p>
+
+              {/* Show SQL Migration console if table is missing */}
+              {firebaseError.includes('school_data') && (
+                <div className="mt-3 bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-x-auto relative shadow-inner">
+                  <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800 text-[10px] text-slate-400 select-none">
+                    <span>SUPABASE SQL MIGRATION EDITOR</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
+                        alert("Skrip SQL telah disalin ke papan klip!");
+                      }} 
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1 px-2.5 rounded transition-colors cursor-pointer select-all"
+                    >
+                      Salin SQL
+                    </button>
+                  </div>
+                  <pre className="text-slate-300 leading-relaxed whitespace-pre">{SQL_MIGRATION_SCRIPT}</pre>
+                </div>
+              )}
+              
+              <p className="text-xs text-red-500 font-mono">Sila pastikan Environment Variables Supabase <b>NEXT_PUBLIC_SUPABASE_URL</b> dan <b>NEXT_PUBLIC_SUPABASE_ANON_KEY</b> telah ditetapkan dengan betul.</p>
             </div>
           )}
 
           {saveStatus === 'error' && saveErrorMessage && (
-            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col gap-2 shadow-sm text-amber-900" id="firebase-save-error">
+            <div className="mb-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col gap-2 shadow-sm text-amber-900" id="supabase-save-error">
               <div className="flex items-center gap-2 font-bold text-base">
                 <span>⚠️ Gagal Menyimpan Ke Awan (Cloud Sync Failed)</span>
               </div>
               <p className="text-sm leading-relaxed">{saveErrorMessage}</p>
+              
+              {saveErrorMessage.includes('school_data') && (
+                <div className="mt-3 bg-slate-950 text-slate-100 rounded-xl p-4 font-mono text-xs overflow-x-auto relative shadow-inner">
+                  <div className="flex justify-between items-center mb-2 pb-2 border-b border-slate-800 text-[10px] text-slate-400 select-none">
+                    <span>SUPABASE SQL MIGRATION EDITOR</span>
+                    <button 
+                      onClick={() => {
+                        navigator.clipboard.writeText(SQL_MIGRATION_SCRIPT);
+                        alert("Skrip SQL telah disalin ke papan klip!");
+                      }} 
+                      className="bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-1 px-2.5 rounded transition-colors cursor-pointer select-all"
+                    >
+                      Salin SQL
+                    </button>
+                  </div>
+                  <pre className="text-slate-300 leading-relaxed whitespace-pre">{SQL_MIGRATION_SCRIPT}</pre>
+                </div>
+              )}
+
               <p className="text-xs text-amber-600 font-mono mt-1 border-t border-amber-200/50 pt-2">Data tempatan yang tidak selari telah dipulihkan (rolled back) untuk mengelakkan percanggahan data.</p>
               <button 
                 onClick={() => { setSaveStatus('idle'); setSaveErrorMessage(null); }} 
-                className="mt-2 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-100 py-1.5 px-3 rounded-lg self-start transition-colors"
+                className="mt-2 text-xs font-bold text-amber-800 hover:text-amber-900 bg-amber-100 py-1.5 px-3 rounded-lg self-start transition-colors cursor-pointer"
               >
                 Tutup Amaran
               </button>
@@ -560,20 +586,20 @@ export default function App() {
           )}
 
           {saveStatus === 'saving' && (
-            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 shadow-sm text-blue-800 animate-pulse" id="firebase-saving-status">
+            <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 shadow-sm text-blue-800 animate-pulse" id="supabase-saving-status">
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm font-medium">Sedang menyelaraskan data anda ke pangkalan data Firebase...</p>
+              <p className="text-sm font-medium">Sedang menyelaraskan data anda ke pangkalan data Supabase...</p>
             </div>
           )}
 
           {saveStatus === 'saved' && (
-            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-2xl flex items-center justify-between shadow-sm text-green-800 text-sm" id="firebase-saved-status">
+            <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-2xl flex items-center justify-between shadow-sm text-green-800 text-sm" id="supabase-saved-status">
               <div className="flex items-center gap-2 font-medium">
-                <span>✅ Berjaya Disimpan ke Firebase Firestore</span>
+                <span>✅ Berjaya Disimpan ke Database Supabase</span>
               </div>
               <button 
                 onClick={() => setSaveStatus('idle')} 
-                className="text-xs font-bold text-green-700 hover:text-green-800 hover:underline"
+                className="text-xs font-bold text-green-700 hover:text-green-800 hover:underline cursor-pointer"
               >
                 Tutup
               </button>
