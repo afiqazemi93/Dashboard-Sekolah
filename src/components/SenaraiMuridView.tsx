@@ -131,11 +131,29 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
   // --- Chart Data ---
   const chartDataYear = useMemo(() => {
-    return ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', 'Tiada Data'].map(y => ({
-      name: y,
-      Jumlah: analytics.yearCounts[y] || 0
-    })).filter(d => d.Jumlah > 0 || d.name !== 'Tiada Data');
-  }, [analytics.yearCounts]);
+    // Standard years
+    const standardYears = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', 'Prasekolah'];
+    const data = standardYears.map(y => {
+      let count = analytics.yearCounts[y] || 0;
+      // If it's Tahun 4, subtract AMANAH students as they get their own bar
+      if (y === 'Tahun 4') {
+        const amanahCount = normalizedStudents.filter(s => s.className === 'AMANAH').length;
+        count = Math.max(0, count - amanahCount);
+      }
+      return {
+        name: y,
+        Jumlah: count
+      };
+    });
+
+    // Add Amanah (PPKI) separately
+    const ppkiCount = normalizedStudents.filter(s => s.className === 'AMANAH').length;
+    if (ppkiCount > 0) {
+      data.push({ name: 'Amanah (PPKI)', Jumlah: ppkiCount });
+    }
+
+    return data.filter(d => d.Jumlah > 0);
+  }, [analytics.yearCounts, normalizedStudents]);
 
   const chartDataGender = [
     { name: 'Lelaki', value: analytics.maleCount, color: '#3b82f6' },
@@ -143,8 +161,30 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   ];
 
   // Unique lists for filters
-  const availableYears = useMemo(() => Array.from(new Set(normalizedStudents.map(s => s.tahun || ''))).filter(Boolean).sort(), [normalizedStudents]);
-  const availableClasses = useMemo(() => Array.from(new Set(normalizedStudents.map(s => s.className))).filter(Boolean).sort(), [normalizedStudents]);
+  const ALL_CLASSES = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
+  const ALL_YEARS = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', 'Prasekolah'];
+  
+  // Use ALL_YEARS for the filter dropdown
+  const filterYearsList = useMemo<string[]>(() => {
+    const existing = new Set(normalizedStudents.map(s => s.tahun || ''));
+    return Array.from(new Set([...ALL_YEARS, ...Array.from(existing)]))
+      .filter((y): y is string => Boolean(y))
+      .sort((a, b) => {
+         if (a.toLowerCase().includes('tahun') && b.toLowerCase().includes('tahun')) {
+            return a.localeCompare(b, undefined, { numeric: true });
+         }
+         return a.localeCompare(b);
+      });
+  }, [normalizedStudents]);
+
+  // Use ALL_CLASSES for the filter dropdown so user can see all options even if empty
+  const filterClassesList = useMemo<string[]>(() => {
+    const existing = new Set(normalizedStudents.map(s => s.className));
+    // Combine all allowed classes and any "other" classes that might exist in data
+    return Array.from(new Set([...ALL_CLASSES, ...Array.from(existing)]))
+      .filter((c): c is string => Boolean(c))
+      .sort();
+  }, [normalizedStudents]);
 
   // Filter & Sort
   const processedData = useMemo(() => {
@@ -157,6 +197,26 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     });
 
     res.sort((a, b) => {
+      const CLASS_SORT_ORDER = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
+
+      // If sorting by name, and we are showing all classes, prioritize class order first to group them
+      if (sortField === 'name' && filterKelas === 'Semua') {
+         const idxA = CLASS_SORT_ORDER.indexOf(a.className || '');
+         const idxB = CLASS_SORT_ORDER.indexOf(b.className || '');
+         const effectiveA = idxA === -1 ? 999 : idxA;
+         const effectiveB = idxB === -1 ? 999 : idxB;
+         if (effectiveA !== effectiveB) return effectiveA - effectiveB;
+      }
+
+      // If user specifically sorts by class, use the custom order
+      if (sortField === 'className') {
+         const idxA = CLASS_SORT_ORDER.indexOf(a.className || '');
+         const idxB = CLASS_SORT_ORDER.indexOf(b.className || '');
+         const effectiveA = idxA === -1 ? 999 : idxA;
+         const effectiveB = idxB === -1 ? 999 : idxB;
+         if (effectiveA !== effectiveB) return sortDirection === 'asc' ? effectiveA - effectiveB : effectiveB - effectiveA;
+      }
+
       let valA = a[sortField] || '';
       let valB = b[sortField] || '';
       if (typeof valA === 'string' && typeof valB === 'string') {
@@ -183,9 +243,14 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   const handleAddIndividu = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formClass) return;
-    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
+    const allowedUpper = ['AMANAH', 'PRASEKOLAH', 'AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
     const typedClass = formClass.trim().toUpperCase();
-    const matchedClass = allowedUpper.find(cls => typedClass.includes(cls));
+    
+    // Prioritize exact match first, then fallback to inclusion (but check from longest to shortest)
+    let matchedClass = allowedUpper.find(cls => typedClass === cls);
+    if (!matchedClass) {
+      matchedClass = allowedUpper.find(cls => typedClass.includes(cls));
+    }
     
     if (!matchedClass) {
       alert("Hanya kelas AMAN, BAHAGIA, HARMONI, MAKMUR, SENTOSA, AMANAH, atau PRASEKOLAH yang dibenarkan.");
@@ -209,14 +274,17 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     if (!pukalText.trim()) return;
     const lines = pukalText.split('\n').filter(l => l.trim());
     const newRecs: StudentRecord[] = [];
-    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
+    const allowedUpper = ['AMANAH', 'PRASEKOLAH', 'AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
 
     lines.forEach(line => {
       // Format expected: Nama | Tahun | Kelas | Jantina
       const parts = line.split(/[|\t,]+/).map(p => p.trim());
       if (parts.length >= 4) {
         const rawClass = parts[2].toUpperCase();
-        const matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+        let matchedClass = allowedUpper.find(cls => rawClass === cls);
+        if (!matchedClass) {
+          matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+        }
 
         if (matchedClass) {
           newRecs.push({
@@ -242,12 +310,19 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
   const downloadTemplate = () => {
     const wb = XLSX.utils.book_new();
-    const sheets = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6'];
+    const sheets = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', '4 Amanah (PPKI)', 'Prasekolah'];
     sheets.forEach(sheetName => {
         const ws = XLSX.utils.json_to_sheet([
             { 'Nama Murid': 'CONTOH PELAJAR SATU', 'Kelas': 'AMAN', 'Jantina': 'Lelaki' },
             { 'Nama Murid': 'CONTOH PELAJAR DUA', 'Kelas': 'BAHAGIA', 'Jantina': 'Perempuan' },
         ]);
+        if (sheetName === '4 Amanah (PPKI)') {
+            ws['A2'] = { v: 'CONTOH PELAJAR PPKI' };
+            ws['B2'] = { v: 'AMANAH' };
+        }
+        if (sheetName === 'Prasekolah') {
+            ws['B2'] = { v: 'PRASEKOLAH' };
+        }
         // Set column widths
         const wscols = [ {wch: 40}, {wch: 15}, {wch: 15} ];
         ws['!cols'] = wscols;
@@ -268,21 +343,32 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
           const bstr = evt.target?.result;
           const wb = XLSX.read(bstr, { type: 'binary' });
           const allNew: StudentRecord[] = [];
-          const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
+          const allowedUpper = ['AMANAH', 'PRASEKOLAH', 'AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
           
           wb.SheetNames.forEach(sheet => {
             const data: any[] = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
             data.forEach(row => {
               if (row['Nama Murid'] || row['Nama'] || row['NAMA']) {
                 const rawClass = String(row['Kelas'] || row['KELAS'] || '').toUpperCase().trim();
-                const matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+                let matchedClass = allowedUpper.find(cls => rawClass === cls);
+                if (!matchedClass) {
+                  matchedClass = allowedUpper.find(cls => rawClass.includes(cls));
+                }
+                
+                // Default class for specific sheets if not specified in cell
+                if (sheet === '4 Amanah (PPKI)') matchedClass = 'AMANAH';
+                if (sheet === 'Prasekolah') matchedClass = 'PRASEKOLAH';
+
                 if (matchedClass) {
                   allNew.push({
                     id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     idNumber: `ST-${Date.now().toString().slice(-6)}`,
                     name: String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim(),
                     className: matchedClass,
-                    tahun: sheet.toLowerCase().includes('tahun') ? sheet : 'Tahun ' + String(row['Tahun'] || '1'),
+                    tahun: sheet.toLowerCase().includes('tahun') ? sheet : 
+                          sheet === 'Prasekolah' ? 'Prasekolah' :
+                          sheet === '4 Amanah (PPKI)' ? 'Tahun 4' :
+                          'Tahun ' + String(row['Tahun'] || '1'),
                     gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
                   });
                 }
@@ -511,14 +597,19 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                      <FilterIcon className="w-4 h-4 text-slate-400" />
                      <select value={filterTahun} onChange={e => { setFilterTahun(e.target.value); setCurrentPage(1); }} className="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
                         <option value="Semua">Semua Tahun</option>
-                        {availableYears.map(y => <option key={y} value={y}>{y}</option>)}
+                        {filterYearsList.map(y => <option key={y} value={y}>{y}</option>)}
                      </select>
                   </div>
                   <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl hidden sm:flex">
                      <FilterIcon className="w-4 h-4 text-slate-400" />
                      <select value={filterKelas} onChange={e => { setFilterKelas(e.target.value); setCurrentPage(1); }} className="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
                         <option value="Semua">Semua Kelas</option>
-                        {availableClasses.map(c => <option key={c} value={c}>{c}</option>)}
+                        {filterClassesList.map(c => (
+                           <option key={c} value={c}>
+                              {c === 'AMANAH' ? 'AMANAH (PPKI)' : 
+                               c === 'PRASEKOLAH' ? 'PRASEKOLAH' : c}
+                           </option>
+                        ))}
                      </select>
                   </div>
                </div>
@@ -526,51 +617,59 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
          </div>
 
          {/* The Table */}
-         <div className="overflow-x-auto w-full">
+          <div className="overflow-x-auto w-full">
             <table className="w-full text-left border-collapse min-w-[700px]">
                <thead className="bg-blue-600">
-                  <tr className="border-b border-blue-700">
-                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider w-16">Bil</th>
-                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">
+                   <tr className="border-b border-blue-700">
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] w-20">Bil</th>
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">
                         Nama Murid
-                        
                      </th>
-                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">
                         Kelas
-                        
                      </th>
-                     <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider">Jantina</th>
-                     {isAdmin && <th className="px-6 py-4 text-sm font-bold text-white uppercase tracking-wider text-center">Tindakan</th>}
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">Jantina</th>
+                     {isAdmin && <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center">Tindakan</th>}
                   </tr>
                </thead>
-               <tbody className="divide-y divide-slate-50">
+               <tbody className="divide-y divide-slate-100">
                   {currentData.length > 0 ? currentData.map((s, idx) => (
-                     <tr key={s.id} className="even:bg-slate-50/50 hover:bg-indigo-50/50 transition-colors group">
-                        <td className="px-6 py-4 text-sm font-medium text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
-                        <td className="px-6 py-4">
-                           <p className="text-sm font-medium text-slate-800 group-hover:text-indigo-700 transition-colors">{s.name}</p>
-                        </td>
-                        <td className="px-6 py-4">
-                           <span className="text-sm font-medium text-slate-700">
-                              {(() => {
-                                 const digit = s.tahun ? (s.tahun.match(/\d+/) ? s.tahun.match(/\d+/)![0] : '') : '';
-                                 const clsName = (s.className || '').toUpperCase();
-                                 
-                                 if (digit && !clsName.startsWith(digit)) {
-                                    return `${digit} ${clsName}`;
-                                 }
-                                 return clsName;
-                              })()}
+                     <tr key={s.id} className="hover:bg-indigo-50/30 transition-all duration-200 group">
+                        <td className="px-6 py-4.5 text-xs font-bold text-slate-400">
+                           <span className="bg-slate-100 w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors tracking-tighter">
+                              {((currentPage - 1) * itemsPerPage + idx + 1).toString().padStart(2, '0')}
                            </span>
                         </td>
-                        <td className="px-6 py-4">
-                           <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600' : 'bg-pink-50 text-pink-600'}`}>
+                        <td className="px-6 py-4.5">
+                           <div className="flex flex-col">
+                              <p className="text-sm font-bold text-slate-800 group-hover:text-indigo-800 transition-colors uppercase tracking-tight">{s.name}</p>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4.5">
+                           <div className="flex flex-col">
+                              <span className="text-[13px] font-extrabold text-slate-700">
+                                 {(() => {
+                                    const digit = s.tahun ? (s.tahun.match(/\d+/) ? s.tahun.match(/\d+/)![0] : '') : '';
+                                    let clsName = (s.className || '').toUpperCase();
+                                    if (clsName === 'AMANAH') clsName = 'AMANAH (PPKI)';
+                                    
+                                    if (digit) {
+                                       return `${digit} ${clsName}`;
+                                    }
+                                    return clsName;
+                                 })()}
+                              </span>
+                           </div>
+                        </td>
+                        <td className="px-6 py-4.5">
+                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' : 'bg-rose-50 text-rose-600 border border-rose-100/50'}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${s.gender === 'Lelaki' ? 'bg-blue-400' : 'bg-rose-400'}`}></span>
                               {s.gender}
                            </span>
                         </td>
                         {isAdmin && (
-                           <td className="px-6 py-4 text-center">
-                              <button onClick={() => deleteStudent(s.id)} className="p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                           <td className="px-6 py-4.5 text-center">
+                              <button onClick={() => deleteStudent(s.id)} className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-rose-100">
                                  <Trash2 className="w-4 h-4" />
                               </button>
                            </td>
