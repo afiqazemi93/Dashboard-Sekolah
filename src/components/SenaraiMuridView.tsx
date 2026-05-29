@@ -6,6 +6,7 @@ import {
 import { SchoolDetails, StudentRecord } from '../types';
 import * as XLSX from 'xlsx';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { motion, AnimatePresence } from 'motion/react';
 
 function MetricCard({ title, value, fromColor, toColor, iconColor, bgIconColor, icon: Icon }: { title: string, value: string, fromColor: string, toColor: string, iconColor: string, bgIconColor: string, icon: any }) {
   return (
@@ -43,6 +44,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   // Admin Panel states
   const [showAdminDrawer, setShowAdminDrawer] = useState(false);
   const [adminTab, setAdminTab] = useState<'individu' | 'upload' | 'pukal'>('individu');
+  const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
+  const [studentToDelete, setStudentToDelete] = useState<StudentRecord | null>(null);
 
   // Individu Form
   const [formName, setFormName] = useState('');
@@ -309,9 +312,25 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   };
 
   const deleteStudent = (id: string) => {
-    if (confirm('Adakah anda pasti untuk padam rekod ini?')) {
-      saveStudents(students.filter(s => s.id !== id));
+    const s = students.find(st => st.id === id);
+    if (s) setStudentToDelete(s);
+  };
+
+  const confirmDeleteStudent = () => {
+    if (studentToDelete) {
+      saveStudents(students.filter(s => s.id !== studentToDelete.id));
+      setStudentToDelete(null);
     }
+  };
+
+  const handleDeleteAll = () => {
+    setShowDeleteAllConfirm(true);
+  };
+
+  const confirmDeleteAll = () => {
+    saveStudents([]);
+    setShowDeleteAllConfirm(false);
+    alert('Semua rekod murid telah dipadamkan.');
   };
 
 
@@ -439,8 +458,36 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
          </div>
       </div>
 
-      {/* 4. Table Section */}
-      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col">
+       {/* 4. Table Section */}
+      <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden flex flex-col relative">
+         
+         {/* Custom Single Delete Confirm Overlay */}
+         <AnimatePresence>
+            {studentToDelete && (
+               <motion.div 
+                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                 className="absolute inset-0 z-50 bg-white/90 backdrop-blur-sm flex items-center justify-center p-6 text-center"
+               >
+                  <motion.div 
+                    initial={{ scale: 0.9, y: 10 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.9, y: 10 }}
+                    className="max-w-xs w-full bg-white border border-slate-200 shadow-2xl rounded-3xl p-8"
+                  >
+                     <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <Trash2 className="w-8 h-8" />
+                     </div>
+                     <h3 className="text-lg font-black text-slate-800 mb-2">Padam Rekod?</h3>
+                     <p className="text-sm font-bold text-slate-500 mb-6">
+                        Adakah anda pasti untuk memadam rekod <span className="text-slate-900">{studentToDelete.name}</span>?
+                     </p>
+                     <div className="flex flex-col gap-2">
+                        <button onClick={confirmDeleteStudent} className="w-full py-3 bg-rose-600 text-white font-bold rounded-xl hover:bg-rose-700 transition-all">Sahkan Padam</button>
+                        <button onClick={() => setStudentToDelete(null)} className="w-full py-3 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition-all">Batal</button>
+                     </div>
+                  </motion.div>
+               </motion.div>
+            )}
+         </AnimatePresence>
+
          {/* Table Header & Filters */}
          <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
             <div className="flex flex-col md:flex-row justify-between shrink-0 gap-4">
@@ -499,12 +546,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                <tbody className="divide-y divide-slate-50">
                   {currentData.length > 0 ? currentData.map((s, idx) => (
                      <tr key={s.id} className="even:bg-slate-50/50 hover:bg-indigo-50/50 transition-colors group">
-                        <td className="px-6 py-4 text-sm font-bold text-slate-400">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
+                        <td className="px-6 py-4 text-sm font-medium text-slate-500">{(currentPage - 1) * itemsPerPage + idx + 1}</td>
                         <td className="px-6 py-4">
-                           <p className="text-sm font-medium text-slate-700 group-hover:text-indigo-700 transition-colors">{s.name}</p>
+                           <p className="text-sm font-medium text-slate-800 group-hover:text-indigo-700 transition-colors">{s.name}</p>
                         </td>
                         <td className="px-6 py-4">
-                           <span className="text-sm font-normal text-slate-600">
+                           <span className="text-sm font-medium text-slate-700">
                               {(() => {
                                  const digit = s.tahun ? (s.tahun.match(/\d+/) ? s.tahun.match(/\d+/)![0] : '') : '';
                                  const clsName = (s.className || '').toUpperCase();
@@ -570,11 +617,38 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       </div>
 
 
-      {/* ADMIN DRAWER MENU MODAL */}
+       {/* ADMIN DRAWER MENU MODAL */}
       {showAdminDrawer && isAdmin && (
          <div className="fixed inset-0 z-[100] flex justify-end bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500">
+            <div className="w-full max-w-md bg-white h-full shadow-2xl flex flex-col animate-in slide-in-from-right duration-500 relative">
                
+               {/* Custom Delete All Confirm Overlay inside Drawer */}
+               <AnimatePresence>
+                 {showDeleteAllConfirm && (
+                   <motion.div 
+                     initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                     className="absolute inset-0 z-[110] bg-white/95 backdrop-blur-md flex items-center justify-center p-8 text-center"
+                   >
+                     <motion.div 
+                       initial={{ scale: 0.95, y: 15 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.95, y: 15 }}
+                       className="w-full"
+                     >
+                       <div className="w-20 h-20 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                         <AlertCircle className="w-10 h-10" />
+                       </div>
+                       <h3 className="text-xl font-black text-slate-900 mb-3 uppercase tracking-tight">AMARAN KERAS</h3>
+                       <p className="text-sm font-bold text-slate-500 mb-8 leading-relaxed">
+                         Anda akan memadam <span className="text-rose-600">SEMUA REKOD MURID</span> ({students.length} orang) secara kekal dari pangkalan data. Tindakan ini bersifat muktamad.
+                       </p>
+                       <div className="space-y-3">
+                         <button onClick={confirmDeleteAll} className="w-full py-4 bg-rose-600 text-white font-black rounded-2xl hover:bg-rose-700 transition-all shadow-lg hover:shadow-rose-200 active:scale-95">Sahkan Padam Kesemua</button>
+                         <button onClick={() => setShowDeleteAllConfirm(false)} className="w-full py-4 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-all">Batalkan Tindakan</button>
+                       </div>
+                     </motion.div>
+                   </motion.div>
+                 )}
+               </AnimatePresence>
+
                {/* Drawer Header */}
                <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                   <div className="flex items-center gap-3">
@@ -738,6 +812,21 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         </button>
                      </div>
                   )}
+
+                  {/* BULK ACTIONS / DANGER ZONE */}
+                  <div className="mt-12 pt-8 border-t border-slate-100">
+                     <h4 className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1 mb-4">Ruang Bahaya</h4>
+                     <button 
+                        onClick={handleDeleteAll}
+                        className="w-full py-3.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold rounded-xl transition-all border border-rose-100 flex justify-center items-center gap-2 group"
+                     >
+                        <Trash2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                        Padam Semua Rekod Murid
+                     </button>
+                     <p className="text-[10px] font-bold text-slate-400 mt-3 text-center px-4 leading-relaxed">
+                        Tindakan ini akan mengosongkan keseluruhan pangkalan data murid.
+                     </p>
+                  </div>
 
                </div>
                

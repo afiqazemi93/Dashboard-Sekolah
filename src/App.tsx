@@ -273,15 +273,17 @@ export default function App() {
 
       // 6. Students & Class headcounts
       if (studentsData && !(studentsData instanceof Error)) {
-        const rawClassData = studentsData.classData && studentsData.classData.length > 0 ? studentsData.classData : fallbackDetails.classData;
-        const rawStudents = studentsData.students && studentsData.students.length > 0 ? studentsData.students : fallbackDetails.students;
+        // Only use fallback if the data is completely missing or null
+        const rawClassData = studentsData.classData !== undefined && studentsData.classData !== null ? studentsData.classData : fallbackDetails.classData;
+        const rawStudents = studentsData.students !== undefined && studentsData.students !== null ? studentsData.students : fallbackDetails.students;
 
         // Clean and filter everything directly from the database load
         const cleanedClassData = (rawClassData || []).filter((c: any) => isClassAllowed(c.className));
         const cleanedStudents = (rawStudents || []).filter((s: any) => isClassAllowed(s.className));
 
-        data.classData = cleanedClassData.length > 0 ? cleanedClassData : fallbackDetails.classData;
-        data.students = cleanedStudents.length > 0 ? cleanedStudents : fallbackDetails.students;
+        // Accept empty arrays as intentional states
+        data.classData = cleanedClassData;
+        data.students = cleanedStudents;
 
         // If we found and deleted non-matching items from DB, save the pristine DB states immediately
         if (cleanedClassData.length !== (rawClassData || []).length || cleanedStudents.length !== (rawStudents || []).length) {
