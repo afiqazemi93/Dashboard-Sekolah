@@ -4,6 +4,7 @@
 @theme {
   --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
   --color-system-bg: #f9f9f9;
+  --animate-spin-slow: spin 3s linear infinite;
 }
 
 @layer base {

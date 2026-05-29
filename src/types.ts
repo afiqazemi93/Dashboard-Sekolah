@@ -42,6 +42,14 @@ export interface StudentRecord {
   className: string;
   tahun?: string;
   gender: 'Lelaki' | 'Perempuan';
+  race?: string; // Melayu, Cina, India, Lain-lain
+}
+
+export interface HemKehadiranRecord {
+  id: string;
+  month: string;
+  hadir: number;
+  sepatutnya: number;
 }
 
 export interface KeberadaanRecord {
@@ -120,10 +128,16 @@ export interface SchoolDetails {
   keberadaanFormUrl?: string;
   keberadaanGasUrl?: string;
   keberadaanRecords?: KeberadaanRecord[];
+  kehadiranMonthly?: HemKehadiranRecord[];
   classData?: ClassHeadcount[];
   students?: StudentRecord[];
   kurikulumData?: KurikulumData;
   updatedAt?: number;
 }
 
-export type TabId = 'maklumat' | 'pentadbiran' | 'organisasi' | 'keberadaan' | 'senarai_murid' | 'kurikulum' | 'kurikulum_panitia' | 'kurikulum_ppki' | 'kurikulum_uasa' | 'hem' | 'kokurikulum';
+export type TabId = 
+  | 'maklumat' 
+  | 'pentadbiran' | 'organisasi' | 'keberadaan' 
+  | 'kurikulum' | 'kurikulum_panitia' | 'kurikulum_ppki' | 'kurikulum_uasa' 
+  | 'hem' | 'senarai_murid' | 'hem_kehadiran' | 'hem_kebajikan' 
+  | 'kokurikulum' | 'koko_unit' | 'koko_pencapaian' | 'koko_pajsk';

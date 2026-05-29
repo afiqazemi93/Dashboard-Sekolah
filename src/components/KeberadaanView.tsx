@@ -212,19 +212,18 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
           <div>
             <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Keberadaan Guru & Staf</h1>
             <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              STATUS KEHADIRAN HARIAN
               <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
               LIVE TRACKING
             </p>
           </div>
         </div>
-        <div className="z-10">
+        <div className="z-10 flex w-full sm:w-auto justify-center sm:justify-end">
           {details.keberadaanFormUrl ? (
-            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 text-white hover:bg-blue-600 text-[10px] uppercase tracking-widest font-black rounded-2xl transition-all shadow-lg hover:-translate-y-1 gap-2">
+            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 text-white hover:bg-blue-600 text-[10px] uppercase tracking-widest font-black rounded-2xl transition-all shadow-lg hover:-translate-y-1 gap-2 w-full sm:w-auto">
                Borang Keberadaan <ExternalLink className="w-4 h-4" />
             </a>
           ) : (
-            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2">
+            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2 w-full sm:w-auto">
               Borang Keberadaan (Tiada Pautan)
             </button>
           )}
@@ -308,7 +307,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       </div>
 
       {/* KAD RUMUSAN STATISTIK */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <MetricCard 
           title="Jumlah Staf" 
           value={totalStaff.toString()} 

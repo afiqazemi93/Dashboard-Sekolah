@@ -4,7 +4,10 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Database, Server, Settings, CheckCircle, Wifi, RefreshCw } from 'lucide-react';
+import { 
+  Database, Server, Settings, CheckCircle, Wifi, RefreshCw, 
+  Calendar, HeartHandshake, Layers, Award, MonitorCheck 
+} from 'lucide-react';
 import { getDocument, setDocument, uploadBase64ToStorage, isSupabaseConfigured, SQL_MIGRATION_SCRIPT } from './supabase';
 import { Sidebar } from './components/Sidebar';
 import { Header } from './components/Header';
@@ -14,6 +17,7 @@ import { KeberadaanView } from './components/KeberadaanView';
 import { SenaraiMuridView } from './components/SenaraiMuridView';
 import { KurikulumView } from './components/KurikulumView';
 import { HemView } from './components/HemView';
+import { HemKehadiranView } from './components/HemKehadiranView';
 import { KokurikulumView } from './components/KokurikulumView';
 import { AdminLoginModal } from './components/AdminModals';
 import { TabId, SchoolDetails, ClassHeadcount, StudentRecord } from './types';
@@ -96,6 +100,43 @@ const fallbackDetails: SchoolDetails = {
     { id: 's11', name: 'NUR SYUHADA BINTI MANSOR', idNumber: 'SKBL-2024-011', className: 'BAHAGIA', tahun: 'Tahun 6', gender: 'Perempuan' },
   ]
 };
+
+const CONSTRUCTION_DATA = {
+  hem_kehadiran: { title: 'Kehadiran Murid', icon: Calendar },
+  hem_kebajikan: { title: 'Kebajikan & Bantuan', icon: HeartHandshake },
+  koko_unit: { title: 'Pengurusan Unit Kokurikulum', icon: Layers },
+  koko_pencapaian: { title: 'Pencapaian Kokurikulum', icon: Award },
+  koko_pajsk: { title: 'E-PAJSK', icon: MonitorCheck },
+};
+
+function ConstructionView({ tabId }: { tabId: keyof typeof CONSTRUCTION_DATA }) {
+  const data = CONSTRUCTION_DATA[tabId];
+  const Icon = data.icon;
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-[500px] text-center p-8 bg-white rounded-[3rem] border border-slate-100 shadow-xl shadow-slate-200/20">
+      <div className="w-24 h-24 bg-blue-50 rounded-[2rem] flex items-center justify-center mb-8 animate-pulse">
+        <Icon className="w-12 h-12 text-blue-600" />
+      </div>
+      <h2 className="text-3xl font-black text-slate-800 mb-4 tracking-tight">{data.title}</h2>
+      <div className="flex flex-col items-center gap-4">
+        <span className="px-4 py-1.5 bg-amber-100 text-amber-700 text-xs font-black uppercase tracking-widest rounded-full flex items-center gap-2">
+          <Settings className="w-3.5 h-3.5 animate-spin-slow" />
+          Sedang Dibangunkan
+        </span>
+        <p className="text-slate-500 max-w-md leading-relaxed">
+          Kami sedang giat membangunkan modul ini untuk memberikan pengalaman terbaik kepada anda. Nantikan kemaskini seterusnya tidak lama lagi!
+        </p>
+      </div>
+      
+      <div className="mt-12 flex gap-3">
+        <div className="w-2 h-2 rounded-full bg-blue-600"></div>
+        <div className="w-2 h-2 rounded-full bg-blue-400"></div>
+        <div className="w-2 h-2 rounded-full bg-blue-200"></div>
+      </div>
+    </div>
+  );
+}
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<TabId>('maklumat');
@@ -550,8 +591,26 @@ export default function App() {
         return <KurikulumView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} activeTab={kurikulumSubTab} />;
       }
       case 'hem':
+      case 'senarai_murid':
+      case 'hem_kehadiran':
+      case 'hem_kebajikan':
+        if (activeTab === 'senarai_murid') {
+          return <SenaraiMuridView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
+        }
+        if (activeTab === 'hem_kehadiran') {
+          return <HemKehadiranView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
+        }
+        if (activeTab === 'hem_kebajikan') {
+          return <ConstructionView tabId={activeTab as any} />;
+        }
         return <HemView />;
       case 'kokurikulum':
+      case 'koko_unit':
+      case 'koko_pencapaian':
+      case 'koko_pajsk':
+        if (activeTab === 'koko_unit' || activeTab === 'koko_pencapaian' || activeTab === 'koko_pajsk') {
+          return <ConstructionView tabId={activeTab as any} />;
+        }
         return <KokurikulumView />;
       default:
         return <MaklumatSekolahView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;

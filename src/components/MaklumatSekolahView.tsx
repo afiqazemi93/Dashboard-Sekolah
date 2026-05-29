@@ -482,7 +482,7 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
       </div>
  
       {/* METRIC COUNTERS */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         <MetricCard title="Murid" subtitle="Jumlah Murid" value={details.totalStudents?.toString() || '0'} fromColor="from-[#1fb2a6]" toColor="to-[#14998d]" iconColor="text-white" bgIconColor="bg-white/20" icon={Users} />
         <MetricCard title="Guru" subtitle="Jumlah Guru" value={details.totalTeachers?.toString() || '0'} fromColor="from-[#8b5cf6]" toColor="to-[#7c3aed]" iconColor="text-white" bgIconColor="bg-white/20" icon={BookOpen} />
         <MetricCard title="Staf" subtitle="Staf Sokongan" value={details.totalStaff?.toString() || '0'} fromColor="from-[#f97316]" toColor="to-[#ea580c]" iconColor="text-white" bgIconColor="bg-white/20" icon={UserCheck} />

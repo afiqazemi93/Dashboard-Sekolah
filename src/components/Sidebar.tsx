@@ -19,7 +19,12 @@ import {
   Shapes,
   Library,
   HandHeart,
-  BarChart3
+  BarChart3,
+  Calendar,
+  HeartHandshake,
+  Layers,
+  Award,
+  MonitorCheck
 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -39,13 +44,21 @@ interface SidebarProps {
 export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogoutAction, isOpen, onClose, logoUrl }: SidebarProps) {
   const [isPentadbiranExpanded, setIsPentadbiranExpanded] = React.useState(false);
   const [isKurikulumExpanded, setIsKurikulumExpanded] = React.useState(false);
+  const [isHemExpanded, setIsHemExpanded] = React.useState(false);
+  const [isKokoExpanded, setIsKokoExpanded] = React.useState(false);
 
   React.useEffect(() => {
-    if (['pentadbiran', 'organisasi', 'keberadaan', 'senarai_murid'].includes(activeTab)) {
+    if (['pentadbiran', 'organisasi', 'keberadaan'].includes(activeTab)) {
       setIsPentadbiranExpanded(true);
     }
-    if (['kurikulum', 'kurikulum_panitia', 'kurikulum_ppki', 'kurikulum_uasa'].includes(activeTab)) {
+    if (['kurikulum', 'kurikulum_panitia', 'kurikulum_uasa', 'kurikulum_ppki'].includes(activeTab)) {
       setIsKurikulumExpanded(true);
+    }
+    if (['hem', 'senarai_murid', 'hem_kehadiran', 'hem_kebajikan'].includes(activeTab)) {
+      setIsHemExpanded(true);
+    }
+    if (['kokurikulum', 'koko_unit', 'koko_pencapaian', 'koko_pajsk'].includes(activeTab)) {
+      setIsKokoExpanded(true);
     }
   }, [activeTab]);
 
@@ -61,7 +74,6 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
       subTabs: [
         { id: 'organisasi' as TabId, label: 'Organisasi Sekolah', icon: Network },
         { id: 'keberadaan' as TabId, label: 'Keberadaan', icon: UserCheck },
-        { id: 'senarai_murid' as TabId, label: 'Enrolmen Murid', icon: GraduationCap },
       ]
     },
     { 
@@ -77,8 +89,32 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
         { id: 'kurikulum_uasa' as TabId, label: 'UASA & PBD', icon: BarChart3 },
       ]
     },
-    { id: 'hem' as TabId, label: 'HEM', icon: Users },
-    { id: 'kokurikulum' as TabId, label: 'Kokurikulum', icon: Trophy },
+    { 
+      id: 'hem' as TabId, 
+      label: 'HEM', 
+      icon: Users,
+      expanded: isHemExpanded,
+      setExpanded: setIsHemExpanded,
+      defaultSubTab: 'senarai_murid' as TabId,
+      subTabs: [
+        { id: 'senarai_murid' as TabId, label: 'Enrolmen Murid', icon: GraduationCap },
+        { id: 'hem_kehadiran' as TabId, label: 'Kehadiran', icon: Calendar },
+        { id: 'hem_kebajikan' as TabId, label: 'Kebajikan & Bantuan', icon: HeartHandshake },
+      ]
+    },
+    { 
+      id: 'kokurikulum' as TabId, 
+      label: 'Kokurikulum', 
+      icon: Trophy,
+      expanded: isKokoExpanded,
+      setExpanded: setIsKokoExpanded,
+      defaultSubTab: 'koko_unit' as TabId,
+      subTabs: [
+        { id: 'koko_unit' as TabId, label: 'Pengurusan Unit', icon: Layers },
+        { id: 'koko_pencapaian' as TabId, label: 'Pencapaian Kokurikulum', icon: Award },
+        { id: 'koko_pajsk' as TabId, label: 'E-PAJSK', icon: MonitorCheck },
+      ]
+    },
   ];
 
   return (
@@ -133,10 +169,21 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
                       if (isParentOrSubtabActive) {
                         tab.setExpanded?.(!tab.expanded);
                       } else {
+                        // Close all others first
+                        setIsPentadbiranExpanded(false);
+                        setIsKurikulumExpanded(false);
+                        setIsHemExpanded(false);
+                        setIsKokoExpanded(false);
+                        
                         onTabChange(tab.defaultSubTab || tab.subTabs[0].id);
                         tab.setExpanded?.(true);
                       }
                     } else {
+                      // Close all when clicking a non-subtab tab
+                      setIsPentadbiranExpanded(false);
+                      setIsKurikulumExpanded(false);
+                      setIsHemExpanded(false);
+                      setIsKokoExpanded(false);
                       onTabChange(tab.id);
                     }
                   }}

@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   Users, UserPlus, FileSpreadsheet, Upload, Download, Search, Filter as FilterIcon, 
-  Trash2, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, BarChart3, PieChart as PieChartIcon, Target, UsersRound, Settings, User
+  Trash2, Edit2, X, AlertCircle, CheckCircle, ChevronLeft, ChevronRight, BarChart3, PieChart as PieChartIcon, Target, UsersRound, Settings, User,
+  Building2, GraduationCap, Heart, Shapes
 } from 'lucide-react';
 import { SchoolDetails, StudentRecord } from '../types';
 import * as XLSX from 'xlsx';
@@ -48,10 +49,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   const [studentToDelete, setStudentToDelete] = useState<StudentRecord | null>(null);
 
   // Individu Form
+  const [formId, setFormId] = useState<string | null>(null);
   const [formName, setFormName] = useState('');
   const [formTahun, setFormTahun] = useState('Tahun 1');
   const [formClass, setFormClass] = useState('AMAN');
   const [formGender, setFormGender] = useState<'Lelaki' | 'Perempuan'>('Lelaki');
+  const [formRace, setFormRace] = useState('Melayu');
 
   // Pukal Form
   const [pukalText, setPukalText] = useState('');
@@ -65,6 +68,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTahun, setFilterTahun] = useState('Tahun 1');
   const [filterKelas, setFilterKelas] = useState('AMAN');
+  const [filterKaum, setFilterKaum] = useState('Semua');
   const [filterGender, setFilterGender] = useState('Semua');
   const [currentPage, setCurrentPage] = useState(1);
   const [sortField, setSortField] = useState<'name' | 'className' | 'tahun'>('name');
@@ -91,13 +95,59 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     return 'Tiada Data';
   };
 
-  // Enhance old records that might not have `tahun`
+  const guessRace = (name: string): string => {
+    const lowercaseName = name.toLowerCase();
+    
+    // Sabah/Sarawak heuristics
+    if (lowercaseName.includes(' anak ') || lowercaseName.match(/\b(ak|a\/k)\b/)) return 'Lain-lain';
+
+    // Indian heuristics
+    if (lowercaseName.includes(' a/l ') || lowercaseName.includes(' a/p ') || lowercaseName.includes(' a/l') || lowercaseName.includes(' a/p')) return 'India';
+    if (lowercaseName.match(/\b(kumar|devi|krish|krishna|raj|rajam|samy|muthu|kavitha|shankar|raman|nair|pillai|singh|kaur)\b/)) return 'India';
+    
+    // Malay heuristics
+    if (lowercaseName.includes(' bin ') || lowercaseName.includes(' binti ') || lowercaseName.includes(' bt ') || lowercaseName.includes(' b. ')) return 'Melayu';
+    if (lowercaseName.match(/\b(muhammad|muhamad|mohd|ahmad|nur|nurul|siti|abdul|syed|sharifah|amir|tengku|raja|wan|nik|megat|puteri|awa|dayang|awang)\b/)) return 'Melayu';
+
+    // Chinese heuristics
+    const chineseSurnames = [
+      'tan', 'lim', 'lee', 'ng', 'ong', 'wong', 'goh', 'chua', 'chan', 'koh', 
+      'teo', 'ooi', 'kho', 'foo', 'pang', 'lai', 'yap', 'liew', 'cheah', 'choo', 
+      'yeoh', 'kok', 'ho', 'tay', 'ang', 'sim', 'low', 'aw', 'soo', 'khoo', 
+      'loh', 'teoh', 'chia', 'chee', 'hew', 'thong', 'loke', 'seow', 'ting', 
+      'tie', 'kong', 'chai', 'lau', 'chieng', 'nong', 'kang', 'phua', 'heng',
+      'chong', 'cheong', 'yong', 'chin', 'leong', 'gan', 'kua', 'kuok', 'poon',
+      'tham', 'tong', 'thiam', 'lum', 'chon', 'teng', 'beh', 'teh',
+      'tian', 'chow', 'chuah', 'hoo', 'hor', 'khor', 'law', 'lian', 'mah', 'mak'
+    ];
+    const parts = lowercaseName.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2 && parts.length <= 4) {
+        if (chineseSurnames.includes(parts[0])) return 'Cina';
+    }
+
+    // Default to Lain-lain if not guessed
+    return 'Lain-lain';
+  };
+
+  // Enhance old records that might not have `tahun` or `race`
   const normalizedStudents = useMemo(() => {
-    return students.map(s => ({
-      ...s,
-      tahun: s.tahun || getTahunFromStr(s.className),
-      className: s.className || 'Tidak Ditetapkan'
-    }));
+    return students.map(s => {
+      let currentRace = s.race;
+      // Re-evaluate if it's currently 'Lain-lain' or missing, in case heuristic improved
+      if (!currentRace || currentRace === 'Lain-lain') {
+         const newGuess = guessRace(s.name);
+         if (newGuess !== 'Lain-lain') {
+             currentRace = newGuess;
+         }
+      }
+      
+      return {
+        ...s,
+        tahun: s.tahun || getTahunFromStr(s.className),
+        className: s.className || 'Tidak Ditetapkan',
+        race: currentRace || guessRace(s.name)
+      };
+    });
   }, [students]);
 
   // --- Analytics Derivates ---
@@ -126,7 +176,53 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
     const ratio = femaleCount > 0 ? (maleCount / femaleCount).toFixed(1) : maleCount > 0 ? '1:0' : '0:0';
 
-    return { total, maleCount, femaleCount, activeClasses, avgPerClass, maxYear, maxYearCount, yearCounts, ratio };
+    // Added specific counts for requested categories
+    const muridAliranPerdanaCount = normalizedStudents.filter(s => 
+      ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'].includes(s.className || '')
+    ).length;
+    const muridPpkiCount = normalizedStudents.filter(s => s.className === 'AMANAH').length;
+    const muridPrasekolahCount = normalizedStudents.filter(s => s.className === 'PRASEKOLAH').length;
+
+    // Race counts
+    let malayCount = 0;
+    let chineseCount = 0;
+    let indianCount = 0;
+    let othersCount = 0;
+    
+    normalizedStudents.forEach(s => {
+      if (s.race === 'Melayu') malayCount++;
+      else if (s.race === 'Cina') chineseCount++;
+      else if (s.race === 'India') indianCount++;
+      else othersCount++;
+    });
+
+    let majorityRace = 'Lain-lain';
+    let majorityRaceCount = othersCount;
+    if (malayCount > majorityRaceCount) { majorityRace = 'Melayu'; majorityRaceCount = malayCount; }
+    if (chineseCount > majorityRaceCount) { majorityRace = 'Cina'; majorityRaceCount = chineseCount; }
+    if (indianCount > majorityRaceCount) { majorityRace = 'India'; majorityRaceCount = indianCount; }
+    const majorityRacePercentage = total > 0 ? Math.round((majorityRaceCount / total) * 100) : 0;
+
+    return { 
+      total, 
+      maleCount, 
+      femaleCount, 
+      activeClasses, 
+      avgPerClass, 
+      maxYear, 
+      maxYearCount, 
+      yearCounts, 
+      ratio,
+      muridAliranPerdanaCount,
+      muridPpkiCount,
+      muridPrasekolahCount,
+      malayCount,
+      chineseCount,
+      indianCount,
+      othersCount,
+      majorityRace,
+      majorityRacePercentage
+    };
   }, [normalizedStudents]);
 
   // --- Chart Data ---
@@ -159,6 +255,27 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     { name: 'Lelaki', value: analytics.maleCount, color: '#3b82f6' },
     { name: 'Perempuan', value: analytics.femaleCount, color: '#ec4899' }
   ];
+
+  const chartDataRace = [
+    { name: 'Melayu', value: analytics.malayCount, color: '#3b82f6' },
+    { name: 'Cina', value: analytics.chineseCount, color: '#ef4444' },
+    { name: 'India', value: analytics.indianCount, color: '#f59e0b' },
+    { name: 'Lain-lain', value: analytics.othersCount, color: '#8b5cf6' }
+  ].filter(d => d.value > 0);
+
+  const chartDataRaceYear = useMemo(() => {
+    const standardYears = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', 'Prasekolah'];
+    return standardYears.map(y => {
+      const studs = normalizedStudents.filter(s => s.tahun === y);
+      return {
+        name: y,
+        Melayu: studs.filter(s => s.race === 'Melayu').length,
+        Cina: studs.filter(s => s.race === 'Cina').length,
+        India: studs.filter(s => s.race === 'India').length,
+        'Lain-lain': studs.filter(s => s.race === 'Lain-lain').length,
+      };
+    });
+  }, [normalizedStudents]);
 
   // Unique lists for filters
   const ALL_CLASSES = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
@@ -193,7 +310,9 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       const matchTahun = filterTahun === 'Semua' || s.tahun === filterTahun;
       const matchKelas = filterKelas === 'Semua' || s.className === filterKelas;
       const matchGender = filterGender === 'Semua' || s.gender === filterGender;
-      return matchSearch && matchTahun && matchKelas && matchGender;
+      const matchKaum = filterKaum === 'Semua' || s.race === filterKaum;
+
+      return matchSearch && matchTahun && matchKelas && matchGender && matchKaum;
     });
 
     res.sort((a, b) => {
@@ -229,7 +348,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     });
 
     return res;
-  }, [normalizedStudents, searchTerm, filterTahun, filterKelas, filterGender, sortField, sortDirection]);
+  }, [normalizedStudents, searchTerm, filterTahun, filterKelas, filterGender, filterKaum, sortField, sortDirection]);
 
   const totalPages = Math.ceil(processedData.length / itemsPerPage);
   const currentData = processedData.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -257,17 +376,52 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       return;
     }
 
-    const newRec: StudentRecord = {
-      id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      idNumber: `ST-${Date.now().toString().slice(-6)}`,
-      name: formName.trim().toUpperCase(),
-      className: matchedClass,
-      tahun: formTahun,
-      gender: formGender
-    };
-    saveStudents([newRec, ...students]);
-    setFormName(''); setFormClass('AMAN');
-    alert(`Rekod ${newRec.name} berjaya ditambah!`);
+    if (formId) {
+      // Edit mode
+      const updatedStudents = students.map(s => {
+        if (s.id === formId) {
+          return {
+            ...s,
+            name: formName.trim().toUpperCase(),
+            className: matchedClass,
+            tahun: formTahun,
+            gender: formGender,
+            race: formRace
+          };
+        }
+        return s;
+      });
+      saveStudents(updatedStudents);
+      setFormId(null);
+      setFormName(''); setFormClass('AMAN');
+      setFormMode('individu');
+      alert(`Rekod ${formName} berjaya dikemaskini!`);
+    } else {
+      // Add mode
+      const newRec: StudentRecord = {
+        id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        idNumber: `ST-${Date.now().toString().slice(-6)}`,
+        name: formName.trim().toUpperCase(),
+        className: matchedClass,
+        tahun: formTahun,
+        gender: formGender,
+        race: formRace
+      };
+      saveStudents([newRec, ...students]);
+      setFormName(''); setFormClass('AMAN');
+      alert(`Rekod ${newRec.name} berjaya ditambah!`);
+    }
+  };
+
+  const handleEditClick = (student: StudentRecord) => {
+    setFormId(student.id);
+    setFormName(student.name);
+    setFormTahun(student.tahun || 'Tahun 1');
+    setFormClass(student.className);
+    setFormGender(student.gender as any);
+    setFormRace(student.race || 'Melayu');
+    setAdminTab('individu');
+    setShowAdminDrawer(true);
   };
 
   const handlePukalParse = () => {
@@ -277,7 +431,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     const allowedUpper = ['AMANAH', 'PRASEKOLAH', 'AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
 
     lines.forEach(line => {
-      // Format expected: Nama | Tahun | Kelas | Jantina
+      // Format expected: Nama | Tahun | Kelas | Jantina | Kaum
       const parts = line.split(/[|\t,]+/).map(p => p.trim());
       if (parts.length >= 4) {
         const rawClass = parts[2].toUpperCase();
@@ -293,7 +447,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
             name: parts[0].toUpperCase(),
             tahun: parts[1],
             className: matchedClass,
-            gender: parts[3].toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
+            gender: parts[3].toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki',
+            race: parts[4] ? parts[4].charAt(0).toUpperCase() + parts[4].slice(1).toLowerCase() : guessRace(parts[0].toUpperCase())
           });
         }
       }
@@ -313,8 +468,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     const sheets = ['Tahun 1', 'Tahun 2', 'Tahun 3', 'Tahun 4', 'Tahun 5', 'Tahun 6', '4 Amanah (PPKI)', 'Prasekolah'];
     sheets.forEach(sheetName => {
         const ws = XLSX.utils.json_to_sheet([
-            { 'Nama Murid': 'CONTOH PELAJAR SATU', 'Kelas': 'AMAN', 'Jantina': 'Lelaki' },
-            { 'Nama Murid': 'CONTOH PELAJAR DUA', 'Kelas': 'BAHAGIA', 'Jantina': 'Perempuan' },
+            { 'Nama Murid': 'CONTOH PELAJAR SATU', 'Kelas': 'AMAN', 'Jantina': 'Lelaki', 'Kaum': 'Melayu' },
+            { 'Nama Murid': 'CONTOH PELAJAR DUA', 'Kelas': 'BAHAGIA', 'Jantina': 'Perempuan', 'Kaum': 'Cina' },
         ]);
         if (sheetName === '4 Amanah (PPKI)') {
             ws['A2'] = { v: 'CONTOH PELAJAR PPKI' };
@@ -324,7 +479,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
             ws['B2'] = { v: 'PRASEKOLAH' };
         }
         // Set column widths
-        const wscols = [ {wch: 40}, {wch: 15}, {wch: 15} ];
+        const wscols = [ {wch: 40}, {wch: 15}, {wch: 15}, {wch: 15} ];
         ws['!cols'] = wscols;
         XLSX.utils.book_append_sheet(wb, ws, sheetName);
     });
@@ -360,16 +515,19 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                 if (sheet === 'Prasekolah') matchedClass = 'PRASEKOLAH';
 
                 if (matchedClass) {
+                  const studentName = String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim();
+                  const rawRace = String(row['Kaum'] || row['KAUM'] || '').trim();
                   allNew.push({
                     id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                     idNumber: `ST-${Date.now().toString().slice(-6)}`,
-                    name: String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim(),
+                    name: studentName,
                     className: matchedClass,
                     tahun: sheet.toLowerCase().includes('tahun') ? sheet : 
                           sheet === 'Prasekolah' ? 'Prasekolah' :
                           sheet === '4 Amanah (PPKI)' ? 'Tahun 4' :
                           'Tahun ' + String(row['Tahun'] || '1'),
-                    gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki'
+                    gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki',
+                    race: rawRace ? rawRace.charAt(0).toUpperCase() + rawRace.slice(1).toLowerCase() : guessRace(studentName)
                   });
                 }
               }
@@ -443,39 +601,171 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
         )}
       </header>
 
-      {/* 2. Top Analytics Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      {/* 2. Top Analytics Cards - 3x2 Grid */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
          <MetricCard 
            title="Jumlah Murid" 
            value={analytics.total.toString()} 
            icon={Users} 
-           fromColor="from-purple-600" toColor="to-purple-500" 
-           bgIconColor="bg-purple-500/20" iconColor="text-purple-50" 
+           fromColor="from-slate-800" toColor="to-slate-700" 
+           bgIconColor="bg-white/10" iconColor="text-white" 
          />
          <MetricCard 
            title="Murid Lelaki" 
            value={analytics.maleCount.toString()} 
            icon={User} 
-           fromColor="from-blue-600" toColor="to-blue-500" 
-           bgIconColor="bg-blue-500/20" iconColor="text-blue-50" 
+           fromColor="from-sky-500" toColor="to-sky-400" 
+           bgIconColor="bg-sky-300/20" iconColor="text-sky-50" 
          />
          <MetricCard 
            title="Murid Perempuan" 
            value={analytics.femaleCount.toString()} 
            icon={UsersRound} 
-           fromColor="from-pink-600" toColor="to-pink-500" 
-           bgIconColor="bg-pink-500/20" iconColor="text-pink-50" 
+           fromColor="from-pink-500" toColor="to-pink-400" 
+           bgIconColor="bg-pink-300/20" iconColor="text-pink-50" 
          />
          <MetricCard 
-           title={`Paling Ramai: ${analytics.maxYear}`} 
-           value={analytics.maxYearCount.toString()} 
-           icon={Target} 
+           title="Aliran Perdana" 
+           value={analytics.muridAliranPerdanaCount.toString()} 
+           icon={GraduationCap} 
+           fromColor="from-blue-600" toColor="to-blue-500" 
+           bgIconColor="bg-blue-400/20" iconColor="text-blue-50" 
+         />
+         <MetricCard 
+           title="Murid PPKI" 
+           value={analytics.muridPpkiCount.toString()} 
+           icon={Heart} 
+           fromColor="from-emerald-600" toColor="to-emerald-500" 
+           bgIconColor="bg-emerald-400/20" iconColor="text-emerald-50" 
+         />
+         <MetricCard 
+           title="Murid Prasekolah" 
+           value={analytics.muridPrasekolahCount.toString()} 
+           icon={Shapes} 
            fromColor="from-amber-600" toColor="to-amber-500" 
-           bgIconColor="bg-amber-500/20" iconColor="text-amber-50" 
+           bgIconColor="bg-amber-400/20" iconColor="text-amber-50" 
          />
       </div>
 
+      {/* Race Info & Insight */}
+      <div className="bg-white rounded-[2rem] p-6 border border-slate-100 shadow-sm relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-50/50 rounded-full -mt-24 -mr-24 blur-3xl pointer-events-none"></div>
+        <div className="flex flex-col lg:flex-row items-center gap-6 relative z-10">
+          <div className="flex-1 w-full grid grid-cols-2 md:grid-cols-4 gap-4">
+             <div className="bg-blue-50/50 border border-blue-100/50 p-4 rounded-2xl flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center font-black">M</div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Melayu</p>
+                  <p className="text-xl font-black text-slate-800">{analytics.malayCount}</p>
+                </div>
+             </div>
+             <div className="bg-red-50/50 border border-red-100/50 p-4 rounded-2xl flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center font-black">C</div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Cina</p>
+                  <p className="text-xl font-black text-slate-800">{analytics.chineseCount}</p>
+                </div>
+             </div>
+             <div className="bg-amber-50/50 border border-amber-100/50 p-4 rounded-2xl flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center font-black">I</div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">India</p>
+                  <p className="text-xl font-black text-slate-800">{analytics.indianCount}</p>
+                </div>
+             </div>
+             <div className="bg-purple-50/50 border border-purple-100/50 p-4 rounded-2xl flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center font-black">L</div>
+                <div>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Lain-lain</p>
+                  <p className="text-xl font-black text-slate-800">{analytics.othersCount}</p>
+                </div>
+             </div>
+          </div>
+          
+          <div className="lg:w-1/3 bg-slate-900 rounded-2xl p-5 text-white flex flex-col justify-center relative overflow-hidden">
+             <div className="absolute -right-4 -bottom-4 opacity-10">
+                <PieChartIcon className="w-24 h-24" />
+             </div>
+             <p className="text-[10px] font-black uppercase tracking-widest text-blue-400 mb-1">Insight Automatik</p>
+             <p className="text-sm font-medium leading-relaxed max-w-[250px] relative z-10">
+                Kaum majoriti sekolah ialah <span className="font-black text-white">{analytics.majorityRace}</span> ({analytics.majorityRacePercentage}%).
+             </p>
+          </div>
+        </div>
+      </div>
+
       {/* 3. Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+         {/* Bar Chart: Kaum Mengikut Tahun */}
+         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+            <h3 className="font-extrabold text-slate-800 flex items-center gap-2 mb-6">
+               <BarChart3 className="w-5 h-5 text-indigo-500" />
+               Jumlah Kaum Mengikut Tahun
+            </h3>
+            <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar pb-2">
+               <div className="h-[300px] min-w-[500px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <BarChart data={chartDataRaceYear} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dx={-10} />
+                        <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
+                        <Legend iconType="circle" wrapperStyle={{ fontSize: 12, fontWeight: 'bold', paddingTop: '10px' }} />
+                        <Bar dataKey="Melayu" stackId="a" fill="#3b82f6" maxBarSize={40} />
+                        <Bar dataKey="Cina" stackId="a" fill="#ef4444" maxBarSize={40} />
+                        <Bar dataKey="India" stackId="a" fill="#f59e0b" maxBarSize={40} />
+                        <Bar dataKey="Lain-lain" stackId="a" fill="#8b5cf6" radius={[6, 6, 0, 0]} maxBarSize={40} />
+                     </BarChart>
+                  </ResponsiveContainer>
+               </div>
+            </div>
+         </div>
+
+         {/* Pie Chart: Kaum */}
+         <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm flex flex-col justify-between">
+            <div>
+               <h3 className="font-extrabold text-slate-800 flex items-center gap-2 mb-2">
+                  <PieChartIcon className="w-5 h-5 text-purple-500" />
+                  Statistik Kaum (Peratus)
+               </h3>
+               <div className="h-[220px] w-full relative mt-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <PieChart>
+                        <Pie data={chartDataRace} cx="50%" cy="50%" innerRadius={60} outerRadius={85} paddingAngle={2} dataKey="value" stroke="none">
+                           {chartDataRace.map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                           ))}
+                        </Pie>
+                        <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
+                     </PieChart>
+                  </ResponsiveContainer>
+                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none mt-2">
+                     <span className="text-[10px] uppercase tracking-widest font-extrabold text-slate-400">Total</span>
+                     <span className="text-xl font-black text-slate-700">{analytics.total}</span>
+                  </div>
+               </div>
+            </div>
+
+            {/* Custom Legend */}
+            <div className="grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-slate-50">
+               {chartDataRace.map((t, idx) => (
+                  <div key={idx} className="flex flex-col justify-between p-3 rounded-2xl border bg-slate-50 border-slate-100">
+                     <div className="flex items-center gap-1.5">
+                        <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }}></span>
+                        <span className="text-[11px] font-bold text-slate-500">{t.name}</span>
+                     </div>
+                     <div className="mt-1 flex items-baseline gap-1">
+                        <span className="text-xl font-black text-slate-800">{t.value}</span>
+                        <span className="text-[10px] font-bold text-slate-400">({analytics.total > 0 ? Math.round((t.value / analytics.total) * 100) : 0}%)</span>
+                     </div>
+                  </div>
+               ))}
+            </div>
+         </div>
+
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
          {/* Bar Chart: Tahun */}
          <div className="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm lg:col-span-2">
@@ -483,16 +773,18 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                <BarChart3 className="w-5 h-5 text-indigo-500" />
                Jumlah Murid Mengikut Tahun
             </h3>
-            <div className="h-[250px] w-full">
-               <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartDataYear} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                     <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
-                     <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dx={-10} />
-                     <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
-                     <Bar dataKey="Jumlah" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={50} />
-                  </BarChart>
-               </ResponsiveContainer>
+            <div className="w-full overflow-x-auto overflow-y-hidden no-scrollbar pb-2">
+               <div className="h-[250px] min-w-[500px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                     <BarChart data={chartDataYear} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                        <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dy={10} />
+                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#64748b' }} dx={-10} />
+                        <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', fontWeight: 'bold' }} />
+                        <Bar dataKey="Jumlah" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                     </BarChart>
+                  </ResponsiveContainer>
+               </div>
             </div>
          </div>
 
@@ -579,47 +871,85 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
             )}
          </AnimatePresence>
 
-         {/* Table Header & Filters */}
-         <div className="p-5 sm:p-6 border-b border-slate-100 bg-slate-50/50">
-            <div className="flex flex-col md:flex-row justify-between shrink-0 gap-4">
-               <div>
-                  <h3 className="font-extrabold text-slate-800 text-lg">Direktori Enrolmen</h3>
-                  <p className="text-xs font-medium text-slate-500 mt-1">Senarai lengkap maklumat murid mengikut paparan terkini.</p>
+          {/* Table Header & Filters */}
+          <div className="p-6 sm:p-8 border-b border-slate-100 bg-slate-50/30">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6">
+               <div className="shrink-0">
+                  <h3 className="font-black text-slate-800 text-xl tracking-tight">Direktori Enrolmen</h3>
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Pengurusan Data Pelajar</p>
                </div>
                
-               <div className="flex flex-wrap items-center gap-3">
-                  <div className="relative">
-                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+               <div className="flex flex-col lg:flex-row w-full lg:w-auto gap-4 lg:items-center lg:flex-wrap">
+                  {/* Search Bar */}
+                  <div className="relative w-full lg:w-auto">
+                     <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
                      <input 
                        type="text" 
-                       placeholder="Cari nama..." 
+                       placeholder="Cari nama murid..." 
                        value={searchTerm}
                        onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
-                       className="pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-sm font-semibold bg-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none w-full md:w-64 transition-all"
+                       className="w-full lg:w-72 xl:w-96 pl-12 pr-4 py-3.5 bg-white border border-slate-200 rounded-[1.25rem] text-sm font-bold text-slate-700 shadow-sm focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all placeholder:text-slate-300 placeholder:font-medium"
                      />
                   </div>
-                  <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl">
-                     <FilterIcon className="w-4 h-4 text-slate-400" />
-                     <select value={filterTahun} onChange={e => { setFilterTahun(e.target.value); setCurrentPage(1); }} className="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
-                        <option value="Semua">Semua Tahun</option>
-                        {filterYearsList.map(y => <option key={y} value={y}>{y}</option>)}
-                     </select>
-                  </div>
-                  <div className="flex items-center gap-2 bg-white border border-slate-200 px-3 py-2 rounded-xl hidden sm:flex">
-                     <FilterIcon className="w-4 h-4 text-slate-400" />
-                     <select value={filterKelas} onChange={e => { setFilterKelas(e.target.value); setCurrentPage(1); }} className="bg-transparent text-sm font-semibold text-slate-700 outline-none cursor-pointer">
-                        <option value="Semua">Semua Kelas</option>
-                        {filterClassesList.map(c => (
-                           <option key={c} value={c}>
-                              {c === 'AMANAH' ? 'AMANAH (PPKI)' : 
-                               c === 'PRASEKOLAH' ? 'PRASEKOLAH' : c}
-                           </option>
-                        ))}
-                     </select>
+
+                  {/* Dropdowns Container */}
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3">
+                    <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-[1.25rem] shadow-sm hover:border-blue-300 transition-colors w-full lg:w-auto overflow-hidden group">
+                       <FilterIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                       <div className="flex flex-col min-w-0 flex-1">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tahun</span>
+                         <select 
+                           value={filterTahun} 
+                           onChange={e => { setFilterTahun(e.target.value); setCurrentPage(1); }} 
+                           className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4"
+                         >
+                            <option value="Semua">Semua Tahun</option>
+                            {filterYearsList.map(y => <option key={y} value={y}>{y}</option>)}
+                         </select>
+                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-[1.25rem] shadow-sm hover:border-blue-300 transition-colors w-full lg:w-auto overflow-hidden group">
+                       <FilterIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                       <div className="flex flex-col min-w-0 flex-1">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Kelas</span>
+                         <select 
+                           value={filterKelas} 
+                           onChange={e => { setFilterKelas(e.target.value); setCurrentPage(1); }} 
+                           className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4"
+                         >
+                            <option value="Semua">Semua Kelas</option>
+                            {filterClassesList.map(c => (
+                               <option key={c} value={c}>
+                                  {c === 'AMANAH' ? 'AMANAH (PPKI)' : 
+                                   c === 'PRASEKOLAH' ? 'PRASEKOLAH' : c}
+                               </option>
+                            ))}
+                         </select>
+                       </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-[1.25rem] shadow-sm hover:border-blue-300 transition-colors w-full lg:w-auto overflow-hidden group">
+                       <FilterIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
+                       <div className="flex flex-col min-w-0 flex-1">
+                         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Kaum</span>
+                         <select 
+                           value={filterKaum} 
+                           onChange={e => { setFilterKaum(e.target.value); setCurrentPage(1); }} 
+                           className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4"
+                         >
+                            <option value="Semua">Semua Kaum</option>
+                            <option value="Melayu">Melayu</option>
+                            <option value="Cina">Cina</option>
+                            <option value="India">India</option>
+                            <option value="Lain-lain">Lain-lain</option>
+                         </select>
+                       </div>
+                    </div>
                   </div>
                </div>
             </div>
-         </div>
+          </div>
 
          {/* The Table */}
           <div className="overflow-x-auto w-full">
@@ -634,6 +964,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         Kelas
                      </th>
                      <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">Jantina</th>
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">Kaum</th>
                      {isAdmin && <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center">Tindakan</th>}
                   </tr>
                </thead>
@@ -672,9 +1003,17 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                               {s.gender}
                            </span>
                         </td>
+                        <td className="px-6 py-4.5">
+                           <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                              {s.race || guessRace(s.name)}
+                           </span>
+                        </td>
                         {isAdmin && (
-                           <td className="px-6 py-4.5 text-center">
-                              <button onClick={() => deleteStudent(s.id)} className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-rose-100">
+                           <td className="px-6 py-4.5 text-center whitespace-nowrap">
+                              <button onClick={() => handleEditClick(s)} className="p-2.5 text-slate-300 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-blue-100 mr-1" title="Kemaskini">
+                                 <Edit2 className="w-4 h-4" />
+                              </button>
+                              <button onClick={() => deleteStudent(s.id)} className="p-2.5 text-slate-300 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all active:scale-90 border border-transparent hover:border-rose-100" title="Padam">
                                  <Trash2 className="w-4 h-4" />
                               </button>
                            </td>
@@ -682,7 +1021,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                      </tr>
                   )) : (
                      <tr>
-                        <td colSpan={isAdmin ? 5 : 4} className="px-6 py-12 text-center">
+                        <td colSpan={isAdmin ? 6 : 5} className="px-6 py-12 text-center">
                            <Users className="w-10 h-10 text-slate-200 mx-auto mb-3" />
                            <p className="text-sm font-bold text-slate-500">Tiada rekod murid dijumpai.</p>
                            <p className="text-xs font-medium text-slate-400">Sila ubah carian atau tambah rekod baru.</p>
@@ -771,9 +1110,9 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
                {/* Drawer Tabs */}
                <div className="p-4 border-b border-slate-100 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
-                  <button onClick={() => setAdminTab('individu')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'individu' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Tambah Individu</button>
-                  <button onClick={() => setAdminTab('upload')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${adminTab === 'upload' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Upload (Excel/CSV)</button>
-                  <button onClick={() => setAdminTab('pukal')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'pukal' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Teks Pukal</button>
+                  <button onClick={() => {setFormId(null); setAdminTab('individu'); setFormName('');}} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'individu' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{formId ? 'Kemaskini Individu' : 'Tambah Individu'}</button>
+                  {!formId && <button onClick={() => setAdminTab('upload')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${adminTab === 'upload' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Upload (Excel/CSV)</button>}
+                  {!formId && <button onClick={() => setAdminTab('pukal')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'pukal' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Teks Pukal</button>}
                </div>
 
                {/* Drawer Content */}
@@ -806,6 +1145,14 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                               <button type="button" onClick={() => setFormGender('Lelaki')} className={`flex-1 py-3 rounded-xl border font-bold text-sm transition-all ${formGender === 'Lelaki' ? 'bg-blue-50 border-blue-200 text-blue-700 shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}>Lelaki</button>
                               <button type="button" onClick={() => setFormGender('Perempuan')} className={`flex-1 py-3 rounded-xl border font-bold text-sm transition-all ${formGender === 'Perempuan' ? 'bg-pink-50 border-pink-200 text-pink-700 shadow-sm' : 'bg-white border-slate-200 text-slate-400 hover:bg-slate-50'}`}>Perempuan</button>
                            </div>
+                        </div>
+                        <div className="space-y-1.5">
+                           <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Kaum</label>
+                           <select value={formRace} onChange={e => setFormRace(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm text-slate-800 cursor-pointer">
+                              {['Melayu', 'Cina', 'India', 'Lain-lain'].map(c => (
+                                 <option key={c} value={c}>{c}</option>
+                              ))}
+                           </select>
                         </div>
 
                         <div className="pt-4 mt-8 border-t border-slate-100">
@@ -903,12 +1250,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
                            <h4 className="text-[13px] font-extrabold text-amber-900 flex items-center gap-2 mb-2">Peringatan Format</h4>
                            <p className="text-[11px] font-bold text-amber-700">Tampal (paste) data dari mana-mana jadual Excel. Pisahkan mengikut tab, koma atau |.</p>
-                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | AMAN | Lelaki<br/>Siti Nur | Tahun 4 | AMANAH | Perempuan</p>
+                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | AMAN | Lelaki | Melayu<br/>Siti Nur | Tahun 4 | AMANAH | Perempuan | Melayu</p>
                         </div>
                         
                         <textarea 
                            className="w-full h-48 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
-                           placeholder="Ali Bin Abu | Tahun 1 | AMAN | Lelaki&#10;Siti Nur | Tahun 4 | AMANAH | Perempuan&#10;..."
+                           placeholder="Ali Bin Abu | Tahun 1 | AMAN | Lelaki | Melayu&#10;Siti Nur | Tahun 4 | AMANAH | Perempuan | Cina&#10;..."
                            value={pukalText}
                            onChange={e => setPukalText(e.target.value)}
                         />

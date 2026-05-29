@@ -62,6 +62,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
   const [isOrgModalOpen, setIsOrgModalOpen] = useState(false);
   const [selectedPanitiaForOrg, setSelectedPanitiaForOrg] = useState<Panitia | null>(null);
   const [isTeacherSelectModalOpen, setIsTeacherSelectModalOpen] = useState(false);
+  const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
   const [memberRoleToAssign, setMemberRoleToAssign] = useState<PanitiaMember['role']>('Guru Panitia');
 
   const allAvailableTeachers = useMemo(() => {
@@ -718,14 +719,15 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                   type="text" 
                   placeholder="Cari nama guru..."
                   className="w-full pl-12 pr-4 py-3.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-blue-100 focus:border-blue-500 outline-none transition-all shadow-sm"
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={teacherSearchQuery}
+                  onChange={(e) => setTeacherSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
             <div className="flex-1 overflow-y-auto p-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
               {allAvailableTeachers
-                .filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                .filter(t => t.name.toLowerCase().includes(teacherSearchQuery.toLowerCase()))
                 .map(t => (
                   <button
                     key={t.id}
@@ -742,6 +744,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                       handleUpdateOrg(selectedPanitiaForOrg.id, newMembers);
                       setSelectedPanitiaForOrg({...selectedPanitiaForOrg, members: newMembers});
                       setIsTeacherSelectModalOpen(false);
+                      setTeacherSearchQuery('');
                     }}
                     className="flex items-center gap-4 p-4 rounded-[2.5rem] border border-slate-100 hover:border-blue-500 hover:bg-blue-50/30 transition-all group text-left"
                   >
