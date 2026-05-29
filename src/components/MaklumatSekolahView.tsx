@@ -346,11 +346,13 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
     <div className="space-y-6 pt-0 w-full pb-12 max-w-7xl mx-auto">
       
       {/* 1. KAD HEADER (BANNER DENGAN ALAMAT, TELEFON, EMEL, FB, VISI & MISI DAN MOTTO) */}
-      <div className="relative rounded-[24px] overflow-hidden bg-white border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.03)] p-6 sm:p-8 transition-all hover:shadow-[0_16px_48px_rgba(0,0,0,0.05)]">
+      <div className="relative rounded-[24px] overflow-hidden bg-white border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.03)] p-6 sm:p-8 transition-all hover:shadow-[0_16px_48px_rgba(0,0,0,0.05)] isolate">
         
         {/* Ambient Glowing Blobs for Glassmorphism Depth */}
-        <div className="absolute -left-10 -top-10 w-44 h-44 rounded-full bg-blue-400/20 blur-3xl pointer-events-none" />
-        <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-indigo-400/20 blur-3xl pointer-events-none" />
+        <div className="absolute inset-0 overflow-hidden rounded-[24px] pointer-events-none -z-10">
+          <div className="absolute -left-10 -top-10 w-44 h-44 rounded-full bg-blue-400/20 blur-3xl" />
+          <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-indigo-400/20 blur-3xl" />
+        </div>
         
         {isAdmin && (
           <button 
