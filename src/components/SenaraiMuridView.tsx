@@ -423,20 +423,25 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   return (
     <div className="w-full max-w-7xl mx-auto pb-16 space-y-6 animate-in fade-in duration-500">
       {/* 1. Header Hero */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 overflow-hidden relative">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-           <UsersRound className="w-64 h-64 -mt-16 -mr-16" />
-        </div>
-        <div className="z-10">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Maklumat Enrolmen Murid</h1>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
+            <UsersRound className="w-8 h-8 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Enrolmen Murid</h1>
+            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
+              PENGURUSAN DATA & STATISTIK
+            </p>
+          </div>
         </div>
         {isAdmin && (
-          <button onClick={() => setShowAdminDrawer(true)} className="z-10 bg-white text-indigo-700 px-6 py-3.5 rounded-2xl font-extrabold shadow-lg hover:shadow-xl hover:-translate-y-1 hover:bg-slate-50 transition-all flex items-center space-x-2">
-            <Settings className="w-5 h-5" />
+          <button onClick={() => setShowAdminDrawer(true)} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl text-[10px] uppercase tracking-widest font-black shadow-lg hover:shadow-xl hover:-translate-y-1 hover:bg-blue-600 transition-all flex items-center space-x-2">
+            <Settings className="w-4 h-4" />
             <span>Urus Enrolmen</span>
           </button>
         )}
-      </div>
+      </header>
 
       {/* 2. Top Analytics Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">

@@ -541,7 +541,14 @@ export default function App() {
       case 'senarai_murid':
         return <SenaraiMuridView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
       case 'kurikulum':
-        return <KurikulumView />;
+      case 'kurikulum_panitia':
+      case 'kurikulum_ppki':
+      case 'kurikulum_uasa': {
+        let kurikulumSubTab: 'panitia' | 'ppki_pemulihan' | 'uasa_pbd' = 'panitia';
+        if (activeTab === 'kurikulum_ppki') kurikulumSubTab = 'ppki_pemulihan';
+        else if (activeTab === 'kurikulum_uasa') kurikulumSubTab = 'uasa_pbd';
+        return <KurikulumView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} activeTab={kurikulumSubTab} />;
+      }
       case 'hem':
         return <HemView />;
       case 'kokurikulum':

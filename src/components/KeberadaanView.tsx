@@ -204,25 +204,32 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full max-w-7xl mx-auto">
       {/* ELEMEN BAHAGIAN ATAS */}
-      <div className="bg-gradient-to-r from-blue-700 to-indigo-900 rounded-3xl p-8 sm:p-10 text-white shadow-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 overflow-hidden relative mb-6">
-        <div className="absolute top-0 right-0 p-8 opacity-10">
-           <UserCheck className="w-64 h-64 -mt-16 -mr-16" />
-        </div>
-        <div className="z-10">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight mb-2">Keberadaan Guru & Staf</h1>
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
+        <div className="flex items-center gap-4">
+          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
+            <UserCheck className="w-8 h-8 text-blue-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Keberadaan Guru & Staf</h1>
+            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
+              STATUS KEHADIRAN HARIAN
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
+              LIVE TRACKING
+            </p>
+          </div>
         </div>
         <div className="z-10">
           {details.keberadaanFormUrl ? (
-            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-white text-indigo-700 hover:bg-slate-50 text-sm font-extrabold rounded-2xl transition-all shadow-lg hover:shadow-xl hover:-translate-y-1 gap-2">
+            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 text-white hover:bg-blue-600 text-[10px] uppercase tracking-widest font-black rounded-2xl transition-all shadow-lg hover:-translate-y-1 gap-2">
                Borang Keberadaan <ExternalLink className="w-4 h-4" />
             </a>
           ) : (
-            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-white/50 text-indigo-900 text-sm font-extrabold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2">
+            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2">
               Borang Keberadaan (Tiada Pautan)
             </button>
           )}
         </div>
-      </div>
+      </header>
 
       <div className="flex border-b border-gray-200 mb-6">
         <button

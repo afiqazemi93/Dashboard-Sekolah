@@ -12,7 +12,14 @@ import {
   Network,
   UserCheck,
   GraduationCap,
-  ChevronDown
+  ChevronDown,
+  LayoutGrid,
+  TrendingUp,
+  Heart,
+  Shapes,
+  Library,
+  HandHeart,
+  BarChart3
 } from 'lucide-react';
 import clsx from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -30,13 +37,15 @@ interface SidebarProps {
 }
 
 export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogoutAction, isOpen, onClose, logoUrl }: SidebarProps) {
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isPentadbiranExpanded, setIsPentadbiranExpanded] = React.useState(false);
+  const [isKurikulumExpanded, setIsKurikulumExpanded] = React.useState(false);
 
   React.useEffect(() => {
     if (['pentadbiran', 'organisasi', 'keberadaan', 'senarai_murid'].includes(activeTab)) {
-      setIsExpanded(true);
-    } else {
-      setIsExpanded(false);
+      setIsPentadbiranExpanded(true);
+    }
+    if (['kurikulum', 'kurikulum_panitia', 'kurikulum_ppki', 'kurikulum_uasa'].includes(activeTab)) {
+      setIsKurikulumExpanded(true);
     }
   }, [activeTab]);
 
@@ -46,13 +55,28 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
       id: 'pentadbiran' as TabId, 
       label: 'Pentadbiran', 
       icon: Building2,
+      expanded: isPentadbiranExpanded,
+      setExpanded: setIsPentadbiranExpanded,
+      defaultSubTab: 'organisasi' as TabId,
       subTabs: [
         { id: 'organisasi' as TabId, label: 'Organisasi Sekolah', icon: Network },
         { id: 'keberadaan' as TabId, label: 'Keberadaan', icon: UserCheck },
         { id: 'senarai_murid' as TabId, label: 'Enrolmen Murid', icon: GraduationCap },
       ]
     },
-    { id: 'kurikulum' as TabId, label: 'Kurikulum', icon: BookOpen },
+    { 
+      id: 'kurikulum' as TabId, 
+      label: 'Kurikulum', 
+      icon: BookOpen,
+      expanded: isKurikulumExpanded,
+      setExpanded: setIsKurikulumExpanded,
+      defaultSubTab: 'kurikulum_panitia' as TabId,
+      subTabs: [
+        { id: 'kurikulum_panitia' as TabId, label: 'Pengurusan Panitia', icon: Library },
+        { id: 'kurikulum_ppki' as TabId, label: 'PPKI & Pemulihan', icon: HandHeart },
+        { id: 'kurikulum_uasa' as TabId, label: 'UASA & PBD', icon: BarChart3 },
+      ]
+    },
     { id: 'hem' as TabId, label: 'HEM', icon: Users },
     { id: 'kokurikulum' as TabId, label: 'Kokurikulum', icon: Trophy },
   ];
@@ -107,10 +131,10 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
                     if (tab.subTabs) {
                       const isParentOrSubtabActive = activeTab === tab.id || tab.subTabs.some(s => s.id === activeTab);
                       if (isParentOrSubtabActive) {
-                        setIsExpanded(!isExpanded);
+                        tab.setExpanded?.(!tab.expanded);
                       } else {
-                        onTabChange('organisasi' as TabId);
-                        setIsExpanded(true);
+                        onTabChange(tab.defaultSubTab || tab.subTabs[0].id);
+                        tab.setExpanded?.(true);
                       }
                     } else {
                       onTabChange(tab.id);
@@ -132,12 +156,12 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
                   <Icon className={clsx("w-4.5 h-4.5 transition-colors duration-200 shrink-0", isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-200")} />
                   <span className="flex-1 text-left">{tab.label}</span>
                   {tab.subTabs && (
-                    <ChevronDown className={clsx("w-4.5 h-4.5 transition-transform duration-250 shrink-0", isExpanded ? "rotate-180" : "", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
+                    <ChevronDown className={clsx("w-4.5 h-4.5 transition-transform duration-250 shrink-0", tab.expanded ? "rotate-180" : "", isActive ? "text-blue-400" : "text-slate-500 group-hover:text-slate-300")} />
                   )}
                 </button>
                 
                 <AnimatePresence initial={false}>
-                  {isExpanded && tab.subTabs && (
+                  {tab.expanded && tab.subTabs && (
                     <motion.div
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: "auto", opacity: 1 }}

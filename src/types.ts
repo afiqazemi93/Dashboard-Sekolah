@@ -57,6 +57,30 @@ export interface KeberadaanRecord {
   butiran?: string;
 }
 
+export interface PanitiaMember {
+  id: string;
+  name: string;
+  role: 'Ketua Panitia' | 'Setiausaha' | 'AJK' | 'Guru Panitia';
+  gender: 'Lelaki' | 'Perempuan';
+  photoUrl?: string;
+}
+
+export interface Panitia {
+  id: string;
+  name: string;
+  slug: string;
+  color: string;
+  members: PanitiaMember[];
+  isArchived?: boolean;
+}
+
+export interface KurikulumData {
+  panitiaList: Panitia[];
+  uasaPbdBannerUrl?: string;
+  simpUrl?: string;
+  simpButtonLabel?: string;
+}
+
 export interface SchoolDetails {
   name: string;
   logoUrl: string;
@@ -98,7 +122,8 @@ export interface SchoolDetails {
   keberadaanRecords?: KeberadaanRecord[];
   classData?: ClassHeadcount[];
   students?: StudentRecord[];
+  kurikulumData?: KurikulumData;
   updatedAt?: number;
 }
 
-export type TabId = 'maklumat' | 'pentadbiran' | 'organisasi' | 'keberadaan' | 'senarai_murid' | 'kurikulum' | 'hem' | 'kokurikulum';
+export type TabId = 'maklumat' | 'pentadbiran' | 'organisasi' | 'keberadaan' | 'senarai_murid' | 'kurikulum' | 'kurikulum_panitia' | 'kurikulum_ppki' | 'kurikulum_uasa' | 'hem' | 'kokurikulum';
