@@ -183,12 +183,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   const handleAddIndividu = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formClass) return;
-    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
     const typedClass = formClass.trim().toUpperCase();
     const matchedClass = allowedUpper.find(cls => typedClass.includes(cls));
     
     if (!matchedClass) {
-      alert("Hanya kelas AMAN, BAHAGIA, HARMONI, MAKMUR, atau SENTOSA yang dibenarkan.");
+      alert("Hanya kelas AMAN, BAHAGIA, HARMONI, MAKMUR, SENTOSA, AMANAH, atau PRASEKOLAH yang dibenarkan.");
       return;
     }
 
@@ -209,7 +209,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     if (!pukalText.trim()) return;
     const lines = pukalText.split('\n').filter(l => l.trim());
     const newRecs: StudentRecord[] = [];
-    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+    const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
 
     lines.forEach(line => {
       // Format expected: Nama | Tahun | Kelas | Jantina
@@ -234,9 +234,9 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     if (newRecs.length > 0) {
       saveStudents([...newRecs, ...students]);
       setPukalText('');
-      alert(`${newRecs.length} rekod murid berjaya ditambah secara pukal. (Sebarang rekod selain kelas AMAN, BAHAGIA, HARMONI, MAKMUR, SENTOSA ditapis keluar secara automatik)`);
+      alert(`${newRecs.length} rekod murid berjaya ditambah secara pukal.`);
     } else {
-      alert("Tiada data kelas AMAN, BAHAGIA, HARMONI, MAKMUR atau SENTOSA yang sah dijumpai.");
+      alert("Tiada data kelas yang sah dijumpai.");
     }
   };
 
@@ -268,7 +268,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
           const bstr = evt.target?.result;
           const wb = XLSX.read(bstr, { type: 'binary' });
           const allNew: StudentRecord[] = [];
-          const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+          const allowedUpper = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
           
           wb.SheetNames.forEach(sheet => {
             const data: any[] = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
@@ -691,7 +691,9 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         <div className="space-y-1.5">
                            <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Nama Kelas</label>
                            <select value={formClass} onChange={e => setFormClass(e.target.value)} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-bold text-sm text-slate-800 cursor-pointer">
-                              {['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'].map(c => <option key={c} value={c}>{c}</option>)}
+                              {['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'].map(c => (
+                                 <option key={c} value={c}>{c === 'AMANAH' ? 'AMANAH (PPKI)' : c}</option>
+                              ))}
                            </select>
                         </div>
                         <div className="space-y-1.5">
@@ -797,12 +799,12 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                         <div className="p-4 bg-amber-50 border border-amber-100 rounded-2xl">
                            <h4 className="text-[13px] font-extrabold text-amber-900 flex items-center gap-2 mb-2">Peringatan Format</h4>
                            <p className="text-[11px] font-bold text-amber-700">Tampal (paste) data dari mana-mana jadual Excel. Pisahkan mengikut tab, koma atau |.</p>
-                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | AMAN | Lelaki<br/>Siti Nur | Tahun 1 | HARMONI | Perempuan</p>
+                           <p className="text-[11px] font-bold text-amber-700 mt-2 p-2 bg-amber-100/50 rounded-lg font-mono">Ali Bin Abu | Tahun 1 | AMAN | Lelaki<br/>Siti Nur | Tahun 4 | AMANAH | Perempuan</p>
                         </div>
                         
                         <textarea 
                            className="w-full h-48 p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-mono font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:bg-white transition-all shadow-inner"
-                           placeholder="Ali Bin Abu | Tahun 1 | AMAN | Lelaki&#10;..."
+                           placeholder="Ali Bin Abu | Tahun 1 | AMAN | Lelaki&#10;Siti Nur | Tahun 4 | AMANAH | Perempuan&#10;..."
                            value={pukalText}
                            onChange={e => setPukalText(e.target.value)}
                         />

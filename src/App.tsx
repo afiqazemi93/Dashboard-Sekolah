@@ -26,7 +26,7 @@ const CACHE_TTL = 180000;
 const defaultPentadbirs: any[] = [];
 const defaultAkpStaffs: any[] = [];
 
-const ALLOWED_CLASSES = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA'];
+const ALLOWED_CLASSES = ['AMAN', 'BAHAGIA', 'HARMONI', 'MAKMUR', 'SENTOSA', 'AMANAH', 'PRASEKOLAH'];
 
 function isClassAllowed(className?: string): boolean {
   if (!className) return false;
@@ -277,9 +277,9 @@ export default function App() {
         const rawClassData = studentsData.classData !== undefined && studentsData.classData !== null ? studentsData.classData : fallbackDetails.classData;
         const rawStudents = studentsData.students !== undefined && studentsData.students !== null ? studentsData.students : fallbackDetails.students;
 
-        // Clean and filter everything directly from the database load
-        const cleanedClassData = (rawClassData || []).filter((c: any) => isClassAllowed(c.className));
-        const cleanedStudents = (rawStudents || []).filter((s: any) => isClassAllowed(s.className));
+        // Use raw data without destructive filtering to respect user's request "jangan delete apa2 data"
+        const cleanedClassData = (rawClassData || []);
+        const cleanedStudents = (rawStudents || []);
 
         // Accept empty arrays as intentional states
         data.classData = cleanedClassData;
