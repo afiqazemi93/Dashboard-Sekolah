@@ -280,7 +280,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
               whileHover={{ y: -5 }}
               className="group bg-white rounded-[2.5rem] p-6 border border-slate-100 shadow-xl shadow-slate-200/20 hover:shadow-2xl hover:shadow-blue-500/10 transition-all relative overflow-hidden"
             >
-              <div className="absolute top-0 right-0 p-4 flex gap-2 translate-y-[-10px] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all">
+              <div className="absolute top-0 right-0 p-4 flex gap-2 translate-y-0 lg:translate-y-[-10px] lg:opacity-0 lg:group-hover:translate-y-0 lg:group-hover:opacity-100 transition-all">
                 {isAdmin && (
                   <>
                     <button 
@@ -788,7 +788,7 @@ function OrgCard({ member, panitiaColor, onRemove, isAdmin, isSmall }: OrgCardPr
       {isAdmin && (
         <button 
           onClick={(e) => { e.stopPropagation(); onRemove(); }}
-          className={`absolute bg-slate-50 text-slate-400 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all ${isSmall ? 'top-2 right-2 w-6 h-6' : 'top-4 right-4 w-8 h-8'}`}
+          className={`absolute bg-slate-50 text-slate-400 rounded-full flex items-center justify-center lg:opacity-0 lg:group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all ${isSmall ? 'top-2 right-2 w-6 h-6' : 'top-4 right-4 w-8 h-8'}`}
         >
           <Trash2 className={isSmall ? "w-3 h-3" : "w-3.5 h-3.5"} />
         </button>

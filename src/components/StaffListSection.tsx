@@ -330,7 +330,7 @@ export function StaffListSection({
               </div>
 
               {isAdmin && (
-                <div className="absolute top-2 right-2 flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity z-30">
+                <div className="absolute top-2 right-2 flex items-center space-x-1 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity z-30">
                   <button 
                     type="button"
                     onClick={() => startEdit(tc)} 
