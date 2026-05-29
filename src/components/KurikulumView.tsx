@@ -399,11 +399,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
           className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/20"
         >
           <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </div>
-            </div>
+            <div></div>
             
             {isAdmin && (
               <label className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer">
@@ -427,9 +423,12 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
 
           <div className="p-10 bg-slate-50/50 flex flex-col items-center gap-6 border-t border-slate-100">
             <div className="text-center max-w-2xl">
-              <h4 className="text-xl font-black text-slate-800 mb-2 tracking-tight">Sistem Integrasi Pengurusan Akademik (SIMP)</h4>
+              <h4 className="text-xl font-black text-slate-800 mb-2 tracking-tight uppercase">
+                Sistem Integrasi Markah & PBD (SIMP)<br />
+                <span className="text-blue-600">SK Batu Lanchang</span>
+              </h4>
               <p className="text-sm text-slate-500 leading-relaxed">
-                Platform berpusat untuk pengurusan data Ujian Akhir Sesi Akademik (UASA) dan Pentaksiran Bilik Darjah (PBD). Sila klik butang di bawah untuk akses terus ke portal.
+                Platform digital pintar yang mengintegrasikan pengurusan markah, Tahap Penguasaan (TP) dan analitik prestasi murid dalam satu sistem bersepadu. Sila klik butang di bawah untuk akses terus ke portal.
               </p>
             </div>
             
