@@ -89,6 +89,12 @@ export interface KurikulumData {
   simpButtonLabel?: string;
 }
 
+export interface KebajikanTabConfig {
+  id: string;
+  title: string;
+  url: string;
+}
+
 export interface SchoolDetails {
   name: string;
   logoUrl: string;
@@ -127,6 +133,11 @@ export interface SchoolDetails {
   keberadaanCachedData?: any;
   keberadaanFormUrl?: string;
   keberadaanGasUrl?: string;
+  ppkiGasUrl?: string;
+  pemulihanGasUrl?: string;
+  ppkiStaffIds?: string[];
+  pemulihanStaffIds?: string[];
+  kebajikanTabs?: KebajikanTabConfig[];
   keberadaanRecords?: KeberadaanRecord[];
   kehadiranMonthly?: HemKehadiranRecord[];
   classData?: ClassHeadcount[];

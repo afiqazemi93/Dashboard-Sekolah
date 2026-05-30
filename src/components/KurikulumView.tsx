@@ -26,6 +26,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { SchoolDetails, Panitia, PanitiaMember, KurikulumData } from '../types';
 import { uploadBase64ToStorage } from '../supabase';
 
+import { PpkiPemulihanView } from './PpkiPemulihanView';
+
 interface KurikulumViewProps {
   details: SchoolDetails;
   isAdmin: boolean;
@@ -484,20 +486,20 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
       case 'ppki_pemulihan':
         return {
           title: 'PPKI & Pemulihan',
-          subtitle: 'PENGURUSAN PENDIDIKAN KHAS & PEMULIHAN KHAS',
-          icon: HandHeart
+          icon: HandHeart,
+          colorClasses: 'bg-blue-50 border-blue-100 text-blue-600'
         };
       case 'uasa_pbd':
         return {
           title: 'UASA & PBD',
-          subtitle: 'PENTAKSIRAN BILIK DARJAH & AKADEMIK',
-          icon: BarChart3
+          icon: BarChart3,
+          colorClasses: 'bg-blue-50 border-blue-100 text-blue-600'
         };
       default:
         return {
           title: 'Pengurusan Panitia',
-          subtitle: 'HUB PENGURUSAN AKADEMIK & PANITIA',
-          icon: Library
+          icon: Library,
+          colorClasses: 'bg-blue-50 border-blue-100 text-blue-600'
         };
     }
   };
@@ -507,19 +509,16 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
 
   return (
     <div className="pb-20 w-full">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
-            <HeaderIcon className="w-8 h-8 text-blue-600" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+        <div className="flex items-center space-x-4">
+          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-sm ${headerInfo.colorClasses}`}>
+            <HeaderIcon className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">{headerInfo.title}</h1>
-            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              {headerInfo.subtitle}
-            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">{headerInfo.title}</h2>
           </div>
         </div>
-      </header>
+      </div>
 
       <AnimatePresence mode="wait">
         <motion.div
@@ -531,7 +530,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
           className="min-h-[500px]"
         >
           {activeTab === 'panitia' && renderPanitiaTab()}
-          {activeTab === 'ppki_pemulihan' && renderPpkiTab()}
+          {activeTab === 'ppki_pemulihan' && <PpkiPemulihanView details={details} isAdmin={isAdmin} onSave={onSave} />}
           {activeTab === 'uasa_pbd' && renderUasaTab()}
         </motion.div>
       </AnimatePresence>

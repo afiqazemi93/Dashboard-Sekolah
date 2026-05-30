@@ -394,7 +394,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       saveStudents(updatedStudents);
       setFormId(null);
       setFormName(''); setFormClass('AMAN');
-      setFormMode('individu');
+      setAdminTab('individu');
       alert(`Rekod ${formName} berjaya dikemaskini!`);
     } else {
       // Add mode
@@ -581,25 +581,28 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
   return (
     <div className="w-full max-w-7xl mx-auto pb-16 space-y-6 animate-in fade-in duration-500">
       {/* 1. Header Hero */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
-            <UsersRound className="w-8 h-8 text-blue-600" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <UsersRound className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Enrolmen Murid</h1>
-            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              PENGURUSAN DATA & STATISTIK
-            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Enrolmen Murid</h2>
           </div>
         </div>
+        
         {isAdmin && (
-          <button onClick={() => setShowAdminDrawer(true)} className="bg-slate-900 text-white px-8 py-3.5 rounded-2xl text-[10px] uppercase tracking-widest font-black shadow-lg hover:shadow-xl hover:-translate-y-1 hover:bg-blue-600 transition-all flex items-center space-x-2">
-            <Settings className="w-4 h-4" />
-            <span>Urus Enrolmen</span>
-          </button>
+          <div className="flex items-center">
+            <button 
+              onClick={() => setShowAdminDrawer(true)} 
+              className="bg-slate-900 hover:bg-blue-600 text-white px-6 py-3 rounded-2xl text-[10px] uppercase tracking-widest font-black shadow-sm transition-all flex items-center space-x-2 hover:scale-[1.02] active:scale-95 cursor-pointer"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Urus Enrolmen</span>
+            </button>
+          </div>
         )}
-      </header>
+      </div>
 
       {/* 2. Top Analytics Cards - 3x2 Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -879,7 +882,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                   <p className="text-[11px] font-bold text-slate-400 uppercase tracking-widest mt-1">Sistem Pengurusan Data Pelajar</p>
                </div>
                
-               <div className="flex flex-col lg:flex-row w-full lg:w-auto gap-4 lg:items-center lg:flex-wrap">
+               <div className="flex flex-col lg:flex-row w-full lg:flex-1 lg:justify-end gap-4 lg:items-center lg:flex-wrap">
                   {/* Search Bar */}
                   <div className="relative w-full lg:w-auto">
                      <Search className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" />
@@ -893,7 +896,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                   </div>
 
                   {/* Dropdowns Container */}
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-wrap items-center gap-3">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:flex lg:flex-wrap items-center lg:justify-end gap-3">
                     <div className="flex items-center gap-3 bg-white border border-slate-200 px-4 py-3 rounded-[1.25rem] shadow-sm hover:border-blue-300 transition-colors w-full lg:w-auto overflow-hidden group">
                        <FilterIcon className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors shrink-0" />
                        <div className="flex flex-col min-w-0 flex-1">
@@ -1038,19 +1041,38 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                <p className="text-xs font-bold text-slate-500">
                   Memaparkan <span className="text-slate-800">{(currentPage - 1) * itemsPerPage + 1}</span> hingga <span className="text-slate-800">{Math.min(currentPage * itemsPerPage, processedData.length)}</span> daripada <span className="text-indigo-600">{processedData.length}</span> rekod
                </p>
-               <div className="flex items-center gap-2 justify-end sm:ml-auto">
+               <div className="flex items-center space-x-1.5 select-none justify-end sm:ml-auto">
                   <button 
                     disabled={currentPage === 1} 
                     onClick={() => setCurrentPage(p => p - 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
+                    className={`p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:hover:bg-transparent ${
+                        currentPage === 1 ? 'cursor-not-allowed text-gray-300' : 'cursor-pointer px-3 bg-white shadow-sm'
+                    }`}
                   >
                      <ChevronLeft className="w-4 h-4" />
                   </button>
-                  <span className="text-xs font-bold px-3 bg-white border border-slate-200 rounded-lg py-1.5">Muka {currentPage} / {totalPages}</span>
+
+                  {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
+                    <button
+                        key={page}
+                        type="button"
+                        onClick={() => setCurrentPage(page)}
+                        className={`min-w-[36px] h-[36px] flex items-center justify-center text-xs font-black rounded-xl transition-all ${
+                        currentPage === page
+                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                            : 'border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 bg-white shadow-sm'
+                        }`}
+                    >
+                        {page}
+                    </button>
+                  ))}
+
                   <button 
                     disabled={currentPage === totalPages} 
                     onClick={() => setCurrentPage(p => p + 1)}
-                    className="p-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 font-bold hover:bg-slate-50 disabled:opacity-50 transition-all cursor-pointer"
+                    className={`p-2 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-100 transition-colors disabled:opacity-40 disabled:hover:bg-transparent ${
+                        currentPage === totalPages ? 'cursor-not-allowed text-gray-300' : 'cursor-pointer px-3 bg-white shadow-sm'
+                    }`}
                   >
                      <ChevronRight className="w-4 h-4" />
                   </button>

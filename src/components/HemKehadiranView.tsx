@@ -110,33 +110,32 @@ export function HemKehadiranView({ details, isAdmin, onSave }: HemKehadiranViewP
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300 w-full max-w-7xl mx-auto">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8 mt-2">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
-            <CalendarDays className="w-8 h-8 text-blue-600" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <CalendarDays className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Kehadiran Murid</h1>
-            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              ANALISA BULANAN & TAHUNAN
-            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Kehadiran Murid</h2>
           </div>
         </div>
         {isAdmin && !isFormOpen && (
-          <button 
-            onClick={() => {
-              setFormId(null);
-              setFormMonth(MONTHS[records.length % 12]);
-              setFormHadir('');
-              setFormSepatutnya('');
-              setIsFormOpen(true);
-            }} 
-            className="px-6 py-3 bg-blue-600 text-white font-bold text-sm rounded-xl hover:bg-blue-700 transition-colors shadow-sm self-start sm:self-auto"
-          >
-            + Tambah Rekod Bulan
-          </button>
+          <div className="flex items-center">
+            <button 
+              onClick={() => {
+                setFormId(null);
+                setFormMonth(MONTHS[records.length % 12]);
+                setFormHadir('');
+                setFormSepatutnya('');
+                setIsFormOpen(true);
+              }} 
+              className="px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs uppercase tracking-wider rounded-2xl transition-all shadow-md shadow-blue-600/10 hover:scale-[1.03] active:scale-95 cursor-pointer self-start sm:self-auto"
+            >
+              + Tambah Rekod Bulan
+            </button>
+          </div>
         )}
-      </header>
+      </div>
 
       {isAdmin && isFormOpen && (
         <div className="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm mb-8 animate-in slide-in-from-top-4 duration-300">
@@ -206,6 +205,13 @@ export function HemKehadiranView({ details, isAdmin, onSave }: HemKehadiranViewP
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1 text-center">Sepatutnya</p>
                 <p className="text-lg font-black text-slate-700 text-center">{totalSepatutnya.toLocaleString()}</p>
              </div>
+          </div>
+
+          <div className="mt-6 pt-4 border-t border-slate-100 text-left relative z-10 w-full">
+            <p className="text-[10px] text-slate-500 leading-normal font-medium">
+              <span className="font-extrabold text-blue-600 uppercase tracking-wider block mb-1">Sasaran KPI KPM:</span>
+              Peratusan kehadiran murid secara amnya ditetapkan pada KPI minimum 93% hingga 95% oleh Kementerian Pendidikan Malaysia (KPM).
+            </p>
           </div>
         </div>
 

@@ -48,8 +48,12 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   const ambilDataLive = async () => {
     try {
       if (details.keberadaanGasUrl) {
+        let fetchUrl = details.keberadaanGasUrl;
+        if (fetchUrl.includes('/a/macros/')) {
+          fetchUrl = fetchUrl.replace(/\/a\/macros\/[^\/]+\/s\//, '/macros/s/');
+        }
         // Option A: Fetch from Google Apps Script
-        const res = await fetch(details.keberadaanGasUrl);
+        const res = await fetch(fetchUrl, { redirect: "follow" });
         if (res.ok) {
           const rawData = await res.json();
           if (Array.isArray(rawData)) {
@@ -204,31 +208,27 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full max-w-7xl mx-auto">
       {/* ELEMEN BAHAGIAN ATAS */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
-            <UserCheck className="w-8 h-8 text-blue-600" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <UserCheck className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Keberadaan Guru & Staf</h1>
-            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></span>
-              LIVE TRACKING
-            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Keberadaan Guru & Staf</h2>
           </div>
         </div>
-        <div className="z-10 flex w-full sm:w-auto justify-center sm:justify-end">
+        <div className="flex items-center">
           {details.keberadaanFormUrl ? (
-            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-900 text-white hover:bg-blue-600 text-[10px] uppercase tracking-widest font-black rounded-2xl transition-all shadow-lg hover:-translate-y-1 gap-2 w-full sm:w-auto">
+            <a href={details.keberadaanFormUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center px-6 py-3 bg-slate-900 text-white hover:bg-blue-600 text-[10px] uppercase tracking-widest font-black rounded-2xl transition-all shadow-sm gap-2 w-full sm:w-auto">
                Borang Keberadaan <ExternalLink className="w-4 h-4" />
             </a>
           ) : (
-            <button className="inline-flex items-center justify-center px-6 py-3.5 bg-slate-100 text-slate-400 text-xs font-bold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2 w-full sm:w-auto">
-              Borang Keberadaan (Tiada Pautan)
+            <button className="inline-flex items-center justify-center px-6 py-3 bg-slate-100 text-slate-400 text-xs font-bold rounded-2xl shadow-sm opacity-50 cursor-not-allowed gap-2 w-full sm:w-auto">
+               Borang Keberadaan (Tiada Pautan)
             </button>
           )}
         </div>
-      </header>
+      </div>
 
       <div className="flex border-b border-gray-200 mb-6">
         <button

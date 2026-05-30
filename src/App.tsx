@@ -18,6 +18,7 @@ import { SenaraiMuridView } from './components/SenaraiMuridView';
 import { KurikulumView } from './components/KurikulumView';
 import { HemView } from './components/HemView';
 import { HemKehadiranView } from './components/HemKehadiranView';
+import { HemKebajikanView } from './components/HemKebajikanView';
 import { KokurikulumView } from './components/KokurikulumView';
 import { AdminLoginModal } from './components/AdminModals';
 import { TabId, SchoolDetails, ClassHeadcount, StudentRecord } from './types';
@@ -601,7 +602,7 @@ export default function App() {
           return <HemKehadiranView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
         }
         if (activeTab === 'hem_kebajikan') {
-          return <ConstructionView tabId={activeTab as any} />;
+          return <HemKebajikanView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
         }
         return <HemView />;
       case 'kokurikulum':

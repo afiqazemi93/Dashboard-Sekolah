@@ -70,19 +70,16 @@ export function PentadbiranView({ details, isAdmin, onSave }: PentadbiranViewPro
   return (
     <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
       {/* Header Hero */}
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10 mt-2">
-        <div className="flex items-center gap-4">
-          <div className="w-16 h-16 bg-white border-2 border-slate-100 rounded-[1.75rem] flex items-center justify-center shadow-xl shadow-slate-200/50">
-            <Network className="w-8 h-8 text-blue-600" />
+      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+        <div className="flex items-center space-x-4">
+          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <Network className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-3xl font-black text-slate-800 tracking-tight leading-none mb-1">Organisasi Sekolah</h1>
-            <p className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-[0.2em]">
-              PROFIL STAF & PENGURUSAN
-            </p>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Organisasi Sekolah</h2>
           </div>
         </div>
-      </header>
+      </div>
 
       {/* Dynamic Gender Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
