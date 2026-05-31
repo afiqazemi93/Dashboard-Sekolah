@@ -66,6 +66,9 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
   const [isTeacherSelectModalOpen, setIsTeacherSelectModalOpen] = useState(false);
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
   const [memberRoleToAssign, setMemberRoleToAssign] = useState<PanitiaMember['role']>('Guru Panitia');
+  const activeScreenshotIndex = null as number | null;
+  const setActiveScreenshotIndex = (val: any) => {};
+  const ChevronLeft = () => null;
 
   const allAvailableTeachers = useMemo(() => {
     return [...(details.pentadbirs || []), ...(details.teachers || [])];
@@ -477,6 +480,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
             )}
           </div>
         </motion.div>
+
       </div>
     );
   };
@@ -763,12 +767,74 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                   </button>
                 ))}
             </div>
-          </motion.div>
-        </div>
-      )}
-    </div>
-  );
-}
+           </motion.div>
+         </div>
+       )}
+
+       {/* Screenshot Lightbox Modal */}
+       <AnimatePresence>
+         {false && (
+           <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-8 bg-slate-950/95 backdrop-blur-2xl">
+             <motion.div 
+               initial={{ opacity: 0, scale: 0.95 }}
+               animate={{ opacity: 1, scale: 1 }}
+               exit={{ opacity: 0, scale: 0.95 }}
+               className="relative w-full h-full max-w-7xl flex flex-col items-center justify-center"
+             >
+               <button 
+                 onClick={() => setActiveScreenshotIndex(null)}
+                 className="absolute top-0 right-0 sm:top-4 sm:right-4 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md"
+               >✕</button>
+
+               {/* Prev Button */}
+               {activeScreenshotIndex > 0 && (
+                 <button 
+                   onClick={() => setActiveScreenshotIndex(activeScreenshotIndex - 1)}
+                   className="absolute left-0 sm:left-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md hidden sm:flex"
+                 >
+                   <ChevronLeft className="w-6 h-6" />
+                 </button>
+               )}
+
+               {/* Next Button */}
+               {activeScreenshotIndex < kurikulumData.uasaPbdScreenshots.length - 1 && (
+                 <button 
+                   onClick={() => setActiveScreenshotIndex(activeScreenshotIndex + 1)}
+                   className="absolute right-0 sm:right-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md hidden sm:flex"
+                 >
+                   <ChevronRight className="w-6 h-6" />
+                 </button>
+               )}
+
+               <div className="w-full h-full max-h-[85vh] flex items-center justify-center relative touch-pan-x"
+                    onClick={(e) => {
+                      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+                      const x = e.clientX - rect.left;
+                      const width = rect.width;
+                      if (x < width / 3 && activeScreenshotIndex > 0) {
+                        setActiveScreenshotIndex(activeScreenshotIndex - 1);
+                      } else if (x > (2 * width) / 3 && activeScreenshotIndex < kurikulumData.uasaPbdScreenshots!.length - 1) {
+                        setActiveScreenshotIndex(activeScreenshotIndex + 1);
+                      }
+                    }}
+               >
+                 <img 
+                   src={kurikulumData.uasaPbdScreenshots[activeScreenshotIndex]} 
+                   alt={`Screenshot ${activeScreenshotIndex + 1}`} 
+                   className="max-w-full max-h-full object-contain drop-shadow-2xl rounded-2xl select-none"
+                 />
+               </div>
+               
+               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-2 bg-slate-900/60 font-mono text-xs font-bold text-white/70 rounded-full tracking-widest backdrop-blur-md border border-white/10">
+                 {activeScreenshotIndex + 1} / {kurikulumData.uasaPbdScreenshots.length}
+               </div>
+             </motion.div>
+           </div>
+         )}
+       </AnimatePresence>
+     </div>
+   );
+ }
 
 interface OrgCardProps {
   key?: string;

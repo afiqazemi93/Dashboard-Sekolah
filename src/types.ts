@@ -85,6 +85,7 @@ export interface Panitia {
 export interface KurikulumData {
   panitiaList: Panitia[];
   uasaPbdBannerUrl?: string;
+  uasaPbdScreenshots?: string[];
   simpUrl?: string;
   simpButtonLabel?: string;
 }
@@ -135,6 +136,7 @@ export interface SchoolDetails {
   keberadaanGasUrl?: string;
   ppkiGasUrl?: string;
   pemulihanGasUrl?: string;
+  kokoGasUrl?: string;
   ppkiStaffIds?: string[];
   pemulihanStaffIds?: string[];
   kebajikanTabs?: KebajikanTabConfig[];
@@ -151,4 +153,4 @@ export type TabId =
   | 'pentadbiran' | 'organisasi' | 'keberadaan' 
   | 'kurikulum' | 'kurikulum_panitia' | 'kurikulum_ppki' | 'kurikulum_uasa' 
   | 'hem' | 'senarai_murid' | 'hem_kehadiran' | 'hem_kebajikan' 
-  | 'kokurikulum' | 'koko_unit' | 'koko_pencapaian' | 'koko_pajsk';
+  | 'kokurikulum' | 'koko_pencapaian';

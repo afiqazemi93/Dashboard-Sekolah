@@ -460,15 +460,6 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
               <Settings className="w-5 h-5" />
             </button>
           )}
-
-          <button 
-            onClick={() => fetchData(activeTabConfig)}
-            disabled={loading}
-            title="Segarkan Data"
-            className={`p-3.5 flex items-center justify-center ${themeBg} ${themeBgHover} text-white rounded-2xl transition-all disabled:opacity-40 border border-transparent shadow-md ${themeShadow} hover:scale-[1.03] active:scale-95 cursor-pointer`}
-          >
-            <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-          </button>
         </div>
       </div>
 
@@ -629,7 +620,7 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
 
           <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center flex-1 lg:justify-end">
             {/* Search component */}
-            <div className="relative w-full sm:max-w-xs md:max-w-sm">
+            <div className="relative w-full sm:max-w-xs md:max-w-sm flex-1">
               <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
@@ -640,8 +631,8 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
               />
             </div>
 
-            {/* Custom selects */}
-            <div className="grid grid-cols-2 sm:flex gap-2.5">
+            {/* Custom selects & Refresh Button */}
+            <div className="grid grid-cols-2 sm:flex gap-2.5 items-center">
               <select
                 value={filterKelas}
                 onChange={e => { setFilterKelas(e.target.value); setCurrentPage(1); }}
@@ -677,7 +668,27 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
                 <option value="Lelaki">Lelaki</option>
                 <option value="Perempuan">Perempuan</option>
               </select>
+
+              <button 
+                onClick={() => fetchData(activeTabConfig)}
+                disabled={loading}
+                title="Segarkan Data"
+                className="bg-white border border-slate-200 p-2.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 group shrink-0 hidden sm:flex"
+              >
+                <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : `group-hover:${themeText}`}`} />
+              </button>
             </div>
+            
+            {/* Mobile Refresh Button (shows below selects on small screens) */}
+            <button 
+                onClick={() => fetchData(activeTabConfig)}
+                disabled={loading}
+                title="Segarkan Data"
+                className="sm:hidden w-full bg-white border border-slate-200 p-2.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 group flex items-center justify-center gap-2"
+              >
+                <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : `group-hover:${themeText}`}`} />
+                <span className="text-xs font-bold text-slate-600">Segarkan Data</span>
+            </button>
           </div>
         </div>
 

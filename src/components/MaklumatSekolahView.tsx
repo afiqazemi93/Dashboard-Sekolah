@@ -3,8 +3,8 @@ import { SchoolDetails, Announcement, CalendarEvent, Teacher } from '../types';
 import { Users, GraduationCap, Briefcase, Clock, MapPin, Mail, Globe, Phone, Edit2, Save, X, Facebook, Youtube, BookOpen, LayoutDashboard, Map, Calendar, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, UserCheck, School, Landmark, Compass, Award, Shield, Maximize2, Layers, Plus, Trash2, Search } from 'lucide-react';
 
 import { StaffListSection } from './StaffListSection';
-
 import { AdminTakwimEditor } from './AdminTakwimEditor';
+import { uploadBase64ToStorage } from '../supabase';
 
 interface MaklumatSekolahViewProps {
   details: SchoolDetails;
@@ -24,17 +24,26 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
   const inputClass = "w-full px-4 py-3 bg-white border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-gray-900 font-medium shadow-sm";
   const labelClass = "block text-xs font-bold text-gray-500 uppercase mb-1.5 ml-1";
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, callback: (base64: string) => void) => {
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, prefix: string, callback: (base64: string) => void) => {
     const file = e.target.files?.[0];
     if (file) {
-      const maxAudioBytes = 720 * 1024; // ~720KB (corresponds to under 1MB base64 string for Firestore)
-      if (file.size > maxAudioBytes) { 
-          alert("Sila muat naik fail audio (lagu sekolah) kurang daripada 720KB (Format MP3) bagi memastikan ia dapat disimpan di pangkalan data awan Firebase (Had Limit 1MB).");
+      if (file.size > 5 * 1024 * 1024) { 
+          alert("Sila muat naik fail audio kurang daripada 5MB.");
           return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => {
-        callback(reader.result as string);
+      reader.onloadend = async () => {
+        const base64 = reader.result as string;
+        try {
+          const url = await uploadBase64ToStorage(`maklumat/${prefix}_${Date.now()}.mp3`, base64);
+          if (!url && base64.length > 500000) {
+            alert("Ralat: Fail ini terlalu besar. Pangkalan data (Supabase Storage) diperlukan untuk fail bersaiz ini.");
+          }
+          callback(url);
+        } catch (err) {
+          console.error("Upload failed", err);
+          alert("Gagal memuat naik fail.");
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -242,32 +251,6 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
                   <label className={labelClass}>Lagu Sekolah (Lirik)</label>
                   <textarea value={formData.schoolSongLyrics || ''} onChange={(e) => setFormData({ ...formData, schoolSongLyrics: e.target.value })} rows={4} className={`${inputClass} resize-none`} placeholder="Lirik lagu sekolah..." />
                 </div>
-                <div>
-                  <label className={labelClass}>Lagu Sekolah (Audio)</label>
-                  <input 
-                    type="file" 
-                    accept="audio/*"
-                    onChange={(e) => handleFileUpload(e, (base64) => setFormData({ ...formData, schoolSongAudioUrl: base64 }))} 
-                    className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
-                  />
-                  {formData.schoolSongAudioUrl && (
-                    <div className="mt-3 p-3 bg-white border border-gray-100 rounded-xl space-y-3 shadow-sm">
-                      <audio controls src={formData.schoolSongAudioUrl} className="w-full h-10" />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (confirm("Adakah anda pasti mahu memadam audio lagu sekolah ini?")) {
-                            setFormData({ ...formData, schoolSongAudioUrl: "" });
-                          }
-                        }}
-                        className="inline-flex items-center space-x-1.5 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors border border-red-200/50 text-xs font-bold"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                        <span>Padam Audio</span>
-                      </button>
-                    </div>
-                  )}
-                </div>
                 <div className="sm:col-span-2">
                   <label className={labelClass}>Pelan Sekolah (Gambar)</label>
                   <input 
@@ -446,22 +429,13 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
 
         {/* Lagu Sekolah & Pelan Sekolah */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mt-5 relative z-10 text-left">
-          {(details.schoolSongLyrics || details.schoolSongAudioUrl) && (
+          {details.schoolSongLyrics && (
             <div className="bg-white p-5 lg:p-6 rounded-2xl border border-gray-100 shadow-[0_2px_12px_rgba(0,0,0,0.02)] flex flex-col justify-start">
               <h4 className="font-bold text-gray-950 text-xs sm:text-sm mb-4 flex items-center space-x-1.5 uppercase tracking-wider">
                 <span className="w-1.5 h-3.5 bg-indigo-500 rounded-full shrink-0"></span>
                 <span>Lagu Sekolah</span>
               </h4>
-              {details.schoolSongLyrics ? (
-                <p className="text-gray-700 text-[13.5px] leading-relaxed font-bold whitespace-pre-wrap flex-1">{details.schoolSongLyrics}</p>
-              ) : (
-                <p className="text-gray-400 text-[13.5px] italic flex-1 mb-4">Lirik tidak disediakan. Sila mainkan fail audio di bawah.</p>
-              )}
-              {details.schoolSongAudioUrl && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <audio controls src={details.schoolSongAudioUrl} className="w-full h-9 rounded-lg" />
-                </div>
-              )}
+              <p className="text-gray-700 text-[13.5px] leading-relaxed font-bold whitespace-pre-wrap flex-1">{details.schoolSongLyrics}</p>
             </div>
           )}
           {details.schoolPlanImageUrl && (

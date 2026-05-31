@@ -105,9 +105,7 @@ const fallbackDetails: SchoolDetails = {
 const CONSTRUCTION_DATA = {
   hem_kehadiran: { title: 'Kehadiran Murid', icon: Calendar },
   hem_kebajikan: { title: 'Kebajikan & Bantuan', icon: HeartHandshake },
-  koko_unit: { title: 'Pengurusan Unit Kokurikulum', icon: Layers },
   koko_pencapaian: { title: 'Pencapaian Kokurikulum', icon: Award },
-  koko_pajsk: { title: 'E-PAJSK', icon: MonitorCheck },
 };
 
 function ConstructionView({ tabId }: { tabId: keyof typeof CONSTRUCTION_DATA }) {
@@ -424,6 +422,11 @@ export default function App() {
         ...basicDetails 
       } = timestampedDetails;
 
+      // Completely remove/clean uasaPbdScreenshots to purge from database
+      if (basicDetails.kurikulumData) {
+        delete basicDetails.kurikulumData.uasaPbdScreenshots;
+      }
+
       const basicDataToSave = {
         ...basicDetails,
         schoolSongLyrics: schoolSongLyrics || ""
@@ -452,8 +455,8 @@ export default function App() {
                  updated.photoUrl = url;
              } catch (e) {
                  console.error("Failed to upload staff photo to Storage", e);
-                 if (updated.photoUrl.length > 1048000) {
-                   updated.photoUrl = '';
+                 if (updated.photoUrl.length > 350000) {
+                    updated.photoUrl = '';
                  }
              }
           }
@@ -480,7 +483,7 @@ export default function App() {
               try {
                   finalLogoUrl = await uploadBase64ToStorage(`images/logo_${Date.now()}.webp`, finalLogoUrl);
               } catch (e) {
-                  if (finalLogoUrl.length > 1048000) finalLogoUrl = '';
+                  if (finalLogoUrl.length > 350000) finalLogoUrl = '';
               }
           }
         })(),
@@ -489,7 +492,7 @@ export default function App() {
               try {
                   finalPlanUrl = await uploadBase64ToStorage(`images/plan_${Date.now()}.webp`, finalPlanUrl);
               } catch (e) {
-                 if (finalPlanUrl.length > 1048000) finalPlanUrl = '';
+                 if (finalPlanUrl.length > 350000) finalPlanUrl = '';
               }
           }
         })()
@@ -500,31 +503,139 @@ export default function App() {
 
       const kCache = typeof keberadaanCachedData === 'string' ? keberadaanCachedData : JSON.stringify(keberadaanCachedData || []);
 
-      // Parallelize all Supabase write operations so the entire process runs in 1 RTT (round-trip time)
-      await Promise.all([
-        safeSupabaseWrite(() => setDocument('details', basicDataToSave), 'school/details'),
-        safeSupabaseWrite(() => setDocument('teachers', { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp }), 'school/teachers'),
-        safeSupabaseWrite(() => setDocument('media_logo', { logoUrl: finalLogoUrl }), 'school/media_logo'),
-        safeSupabaseWrite(async () => {
-          const audioStr = schoolSongAudioUrl || "";
-          if (audioStr && audioStr.length > 1048000) {
-             console.warn("Saiz fail audio terlalu besar");
-             return;
+      // Helper function to check if values are changed
+      const hasChanged = (newVal: any, oldVal: any) => {
+        return JSON.stringify(newVal) !== JSON.stringify(oldVal);
+      };
+
+      const { 
+        teachers: oldTeachers, pentadbirs: oldPentadbirs, akpStaffs: oldAkp,
+        logoUrl: oldLogoUrl, 
+        schoolSongLyrics: oldLyrics, schoolSongAudioUrl: oldAudio, 
+        schoolPlanImageUrl: oldPlan, 
+        classData: oldClassData, students: oldStudents,
+        calendarEvents: oldEvents,
+        keberadaanCachedData: oldKCacheRaw, keberadaanGasUrl: oldGasUrl, keberadaanSheetIdOrUrl: oldSheetId, keberadaanSheetRange: oldSheetRange, keberadaanFormUrl: oldFormUrl, keberadaanRecords: oldRecords,
+        ...oldBasicDetails 
+      } = oldDetails;
+
+      const oldBasicDataToSave = {
+        ...oldBasicDetails,
+        schoolSongLyrics: oldLyrics || ""
+      };
+
+      const oldKCacheStr = typeof oldKCacheRaw === 'string' ? oldKCacheRaw : JSON.stringify(oldKCacheRaw || []);
+
+      // Strip updatedAt for clean base data structure comparison
+      const { updatedAt: _, ...cmpNewBasic } = basicDataToSave;
+      const { updatedAt: __, ...cmpOldBasic } = oldBasicDataToSave;
+
+      const writesToPerform = [];
+
+      // 1. Details partition
+      if (hasChanged(cmpNewBasic, cmpOldBasic)) {
+        writesToPerform.push({
+          name: 'school/details',
+          op: () => setDocument('details', basicDataToSave)
+        });
+      }
+
+      // 2. Teachers partition
+      const newTeachersPayload = { teachers: finalTeachers, pentadbirs: finalPentadbirs, akpStaffs: finalAkp };
+      const oldTeachersPayload = { teachers: oldTeachers || [], pentadbirs: oldPentadbirs || [], akpStaffs: oldAkp || [] };
+      if (hasChanged(newTeachersPayload, oldTeachersPayload)) {
+        writesToPerform.push({
+          name: 'school/teachers',
+          op: () => setDocument('teachers', newTeachersPayload)
+        });
+      }
+
+      // 3. Media Logo partition
+      const newLogoPayload = { logoUrl: finalLogoUrl };
+      const oldLogoPayload = { logoUrl: oldLogoUrl || "" };
+      if (hasChanged(newLogoPayload, oldLogoPayload)) {
+        writesToPerform.push({
+          name: 'school/media_logo',
+          op: () => setDocument('media_logo', newLogoPayload)
+        });
+      }
+
+      // 4. Media Song partition
+      const newSongPayload = { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: schoolSongAudioUrl || "" };
+      const oldSongPayload = { schoolSongLyrics: oldLyrics || "", schoolSongAudioUrl: oldAudio || "" };
+      if (hasChanged(newSongPayload, oldSongPayload)) {
+        writesToPerform.push({
+          name: 'school/media_song',
+          op: async () => {
+            const audioStr = schoolSongAudioUrl || "";
+            if (audioStr && audioStr.length > 10480000) {
+               console.warn("Saiz fail audio terlalu besar");
+               return;
+            }
+            await setDocument('media_song', { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr });
           }
-          await setDocument('media_song', { schoolSongLyrics: schoolSongLyrics || "", schoolSongAudioUrl: audioStr });
-        }, 'school/media_song'),
-        safeSupabaseWrite(() => setDocument('media_plan', { schoolPlanImageUrl: finalPlanUrl }), 'school/media_plan'),
-        safeSupabaseWrite(() => setDocument('students', { classData: classData || [], students: students || [] }), 'school/students'),
-        safeSupabaseWrite(() => setDocument('calendar', { calendarEvents: calendarEvents || [] }), 'school/calendar'),
-        safeSupabaseWrite(() => setDocument('keberadaan', { 
-          keberadaanCachedData: kCache,
-          keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
-          keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
-          keberadaanSheetRange: keberadaanSheetRange || "",
-          keberadaanFormUrl: keberadaanFormUrl || "",
-          keberadaanRecords: keberadaanRecords || []
-        }), 'school/keberadaan')
-      ]);
+        });
+      }
+
+      // 5. Media Plan partition
+      const newPlanPayload = { schoolPlanImageUrl: finalPlanUrl };
+      const oldPlanPayload = { schoolPlanImageUrl: oldPlan || "" };
+      if (hasChanged(newPlanPayload, oldPlanPayload)) {
+        writesToPerform.push({
+          name: 'school/media_plan',
+          op: () => setDocument('media_plan', newPlanPayload)
+        });
+      }
+
+      // 6. Students partition
+      const newStudentsPayload = { classData: classData || [], students: students || [] };
+      const oldStudentsPayload = { classData: oldClassData || [], students: oldStudents || [] };
+      if (hasChanged(newStudentsPayload, oldStudentsPayload)) {
+        writesToPerform.push({
+          name: 'school/students',
+          op: () => setDocument('students', newStudentsPayload)
+        });
+      }
+
+      // 7. Calendar partition
+      const newCalendarPayload = { calendarEvents: calendarEvents || [] };
+      const oldCalendarPayload = { calendarEvents: oldEvents || [] };
+      if (hasChanged(newCalendarPayload, oldCalendarPayload)) {
+        writesToPerform.push({
+          name: 'school/calendar',
+          op: () => setDocument('calendar', newCalendarPayload)
+        });
+      }
+
+      // 8. Keberadaan partition
+      const newKeberadaanPayload = { 
+        keberadaanCachedData: kCache,
+        keberadaanGasUrl: timestampedDetails.keberadaanGasUrl || "",
+        keberadaanSheetIdOrUrl: keberadaanSheetIdOrUrl || "",
+        keberadaanSheetRange: keberadaanSheetRange || "",
+        keberadaanFormUrl: keberadaanFormUrl || "",
+        keberadaanRecords: keberadaanRecords || []
+      };
+      const oldKeberadaanPayload = { 
+        keberadaanCachedData: oldKCacheStr,
+        keberadaanGasUrl: oldGasUrl || "",
+        keberadaanSheetIdOrUrl: oldSheetId || "",
+        keberadaanSheetRange: oldSheetRange || "",
+        keberadaanFormUrl: oldFormUrl || "",
+        keberadaanRecords: oldRecords || []
+      };
+      if (hasChanged(newKeberadaanPayload, oldKeberadaanPayload)) {
+        writesToPerform.push({
+          name: 'school/keberadaan',
+          op: () => setDocument('keberadaan', newKeberadaanPayload)
+        });
+      }
+
+      // Perform all scheduled differential writes sequentially
+      console.info(`Saving school changes: Executing ${writesToPerform.length} database upserts sequentially.`);
+      for (const task of writesToPerform) {
+        await safeSupabaseWrite(task.op, task.name);
+      }
 
       // Everything saved successfully!
       setSaveStatus('saved');
@@ -606,13 +717,11 @@ export default function App() {
         }
         return <HemView />;
       case 'kokurikulum':
-      case 'koko_unit':
       case 'koko_pencapaian':
-      case 'koko_pajsk':
-        if (activeTab === 'koko_unit' || activeTab === 'koko_pencapaian' || activeTab === 'koko_pajsk') {
-          return <ConstructionView tabId={activeTab as any} />;
+        if (activeTab === 'koko_pencapaian' || activeTab === 'kokurikulum') {
+          return <KokurikulumView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
         }
-        return <KokurikulumView />;
+        return <ConstructionView tabId={activeTab as any} />;
       default:
         return <MaklumatSekolahView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
     }

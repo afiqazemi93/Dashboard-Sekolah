@@ -57,7 +57,7 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
     if (['hem', 'senarai_murid', 'hem_kehadiran', 'hem_kebajikan'].includes(activeTab)) {
       setIsHemExpanded(true);
     }
-    if (['kokurikulum', 'koko_unit', 'koko_pencapaian', 'koko_pajsk'].includes(activeTab)) {
+    if (['kokurikulum', 'koko_pencapaian'].includes(activeTab)) {
       setIsKokoExpanded(true);
     }
   }, [activeTab]);
@@ -108,11 +108,9 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
       icon: Trophy,
       expanded: isKokoExpanded,
       setExpanded: setIsKokoExpanded,
-      defaultSubTab: 'koko_unit' as TabId,
+      defaultSubTab: 'koko_pencapaian' as TabId,
       subTabs: [
-        { id: 'koko_unit' as TabId, label: 'Pengurusan Unit', icon: Layers },
         { id: 'koko_pencapaian' as TabId, label: 'Pencapaian Kokurikulum', icon: Award },
-        { id: 'koko_pajsk' as TabId, label: 'E-PAJSK', icon: MonitorCheck },
       ]
     },
   ];
