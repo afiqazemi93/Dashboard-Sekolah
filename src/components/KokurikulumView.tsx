@@ -366,17 +366,7 @@ export function KokurikulumView({ details, isAdmin, onSave }: KokurikulumViewPro
                 <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : 'group-hover:text-[#bc1437]'}`} />
               </button>
             </div>
-            <button 
-              onClick={fetchData}
-              disabled={loading}
-              title="Segarkan Data"
-              className="sm:hidden w-full bg-white border border-slate-200 p-2.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 group flex items-center justify-center gap-2 mt-[-0.5rem]"
-            >
-              <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : 'group-hover:text-[#bc1437]'}`} />
-              <span className="text-xs font-bold text-slate-600">Segarkan Data</span>
-            </button>
           </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <select
               value={filterTahun}
@@ -411,6 +401,16 @@ export function KokurikulumView({ details, isAdmin, onSave }: KokurikulumViewPro
               {availablePencapaian.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
+          
+          <button 
+            onClick={fetchData}
+            disabled={loading}
+            title="Segarkan Data"
+            className="sm:hidden w-full bg-white border border-slate-200 p-2.5 rounded-xl hover:bg-slate-50 transition-colors shadow-sm disabled:opacity-50 group flex items-center justify-center gap-2"
+          >
+            <RefreshCw className={`w-4 h-4 text-slate-500 ${loading ? 'animate-spin' : 'group-hover:text-[#bc1437]'}`} />
+            <span className="text-xs font-bold text-slate-600">Segarkan Data</span>
+          </button>
         </div>
 
         <div className="overflow-x-auto w-full">
@@ -496,17 +496,27 @@ export function KokurikulumView({ details, isAdmin, onSave }: KokurikulumViewPro
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-                <button
-                  key={page}
-                  onClick={() => setCurrentPage(page)}
-                  className={`min-w-[36px] h-[36px] flex items-center justify-center text-xs font-black rounded-xl transition-all ${
-                    currentPage === page ? `${themePageBtnActive} text-white` : 'border border-gray-200 text-gray-600 hover:bg-gray-100'
-                  }`}
-                >
-                  {page}
-                </button>
-              ))}
+              {(() => {
+                 let startPage = Math.max(1, currentPage - 2);
+                 let endPage = startPage + 4;
+                 if (endPage > totalPages) {
+                    endPage = totalPages;
+                    startPage = Math.max(1, endPage - 4);
+                 }
+                 const pagesToShow = Array.from({length: endPage - startPage + 1}, (_, i) => startPage + i);
+                 return pagesToShow.map((page) => (
+                    <button
+                      key={page}
+                      type="button"
+                      onClick={() => setCurrentPage(page)}
+                      className={`min-w-[36px] h-[36px] flex items-center justify-center text-xs font-black rounded-xl transition-all ${
+                        currentPage === page ? `${themePageBtnActive} text-white shadow-md shadow-emerald-500/20` : 'border border-slate-200 text-slate-600 hover:bg-slate-50 bg-white shadow-sm'
+                      }`}
+                    >
+                      {page}
+                    </button>
+                  ));
+              })()}
               <button 
                 onClick={() => currentPage < totalPages && setCurrentPage(currentPage + 1)}
                 disabled={currentPage === totalPages}

@@ -669,14 +669,7 @@ function CalendarSection({ calendarEvents, selectedDate, onSelectDate }: { calen
     'Julai', 'Ogos', 'September', 'Oktober', 'November', 'Disember'
   ];
 
-  const [calDate, setCalDate] = useState(() => {
-    const now = new Date();
-    // Default to May 2026 to stay aligned with current school term data
-    if (now.getFullYear() !== 2026 || now.getMonth() !== 4) {
-      return new Date(2026, 4, 25);
-    }
-    return now;
-  });
+  const [calDate, setCalDate] = useState(() => new Date());
 
   const year = calDate.getFullYear();
   const month = calDate.getMonth(); // 0-11

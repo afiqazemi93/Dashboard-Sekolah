@@ -203,8 +203,8 @@ export function PpkiPemulihanView({ details, isAdmin, onSave }: PpkiPemulihanVie
      if (activeTab === 'ppki') {
        return (
          <tr className="bg-blue-600 text-white text-sm uppercase tracking-widest border-b border-blue-700">
-           <th className="px-6 py-4 font-black w-12 text-center">Bil.</th>
-           <th className="px-6 py-4 font-black">Nama Penuh</th>
+           <th className="px-2 py-4 font-black w-12 min-w-[48px] text-center sticky left-0 bg-blue-600 z-20">Bil.</th>
+           <th className="px-6 py-4 font-black sticky left-12 bg-blue-600 z-20 border-r border-blue-700 min-w-[180px] max-w-[280px]">Nama Penuh</th>
            <th className="px-6 py-4 font-black">Jantina</th>
            <th className="px-6 py-4 font-black">Umur</th>
            <th className="px-6 py-4 font-black">Bangsa/Agama</th>
@@ -229,8 +229,15 @@ export function PpkiPemulihanView({ details, isAdmin, onSave }: PpkiPemulihanVie
 
      return (
         <tr className="bg-emerald-600 text-white text-sm uppercase tracking-widest border-b border-emerald-700">
-          <th className="px-6 py-4 font-black w-12 text-center">Bil.</th>
-          {keys.map((k, i) => <th key={i} className="px-6 py-4 font-black">{k}</th>)}
+          <th className="px-2 py-4 font-black w-12 min-w-[48px] text-center sticky left-0 bg-emerald-600 z-20">Bil.</th>
+          {keys.map((k, i) => (
+            <th 
+              key={i} 
+              className={`px-6 py-4 font-black ${i === 0 ? 'sticky left-12 bg-emerald-600 z-20 border-r border-emerald-700 min-w-[180px] max-w-[280px]' : ''}`}
+            >
+              {k}
+            </th>
+          ))}
         </tr>
      );
   };
@@ -281,39 +288,55 @@ export function PpkiPemulihanView({ details, isAdmin, onSave }: PpkiPemulihanVie
            const tarikh = getKey(item, ['TARIKH DAFTAR']);
 
            return (
-             <tr key={idx} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
-                <td className="px-6 py-4 font-black text-slate-400 text-xs text-center">{idx + 1}</td>
-                <td className="px-6 py-4 font-bold text-slate-800 text-xs uppercase">{nama}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-600 uppercase">{jantina}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-600">{umur}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-600 uppercase">
+             <tr key={idx} className="hover:bg-slate-50 transition-colors border-b border-slate-50 group">
+                <td className="px-2 py-4 font-black text-slate-400 text-[11px] text-center sticky left-0 bg-white group-hover:bg-slate-50 z-10 w-12 min-w-[48px]">{idx + 1}</td>
+                <td className="px-6 py-4 font-bold text-slate-800 text-[11px] uppercase sticky left-12 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)] min-w-[180px] max-w-[280px]" title={nama as string}>
+                  <div className="line-clamp-2 whitespace-normal leading-tight">
+                    {nama}
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">{jantina}</td>
+                <td className="px-6 py-4 text-[11px] font-bold text-slate-600">{umur}</td>
+                <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
                   <div className="flex flex-col">
                     <span>{bangsa}</span>
                     <span className="text-[10px] text-slate-400">{agama}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-xs font-bold text-blue-600 uppercase">{kelas}</td>
-                <td className="px-6 py-4 text-xs font-bold text-slate-600 uppercase">
+                <td className="px-6 py-4 text-[11px] font-bold text-blue-600 uppercase">{kelas}</td>
+                <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
                   <div className="flex flex-col gap-1">
                     <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] rounded-lg border border-blue-100 max-w-max">{kategori}</span>
                     <span className="inline-block px-2 py-0.5 bg-amber-50 text-amber-600 text-[9px] rounded-lg border border-amber-100 max-w-max line-clamp-1" title={ketidakupayaan as string}>{ketidakupayaan}</span>
                   </div>
                 </td>
-                <td className="px-6 py-4 text-xs font-medium text-slate-500">{tarikh}</td>
+                <td className="px-6 py-4 text-[11px] font-medium text-slate-500">{tarikh}</td>
              </tr>
            );
         }
 
         // Generic fallback for Pemulihan Tab
         return (
-          <tr key={idx} className="hover:bg-slate-50 transition-colors border-b border-slate-50">
-             <td className="px-6 py-4 font-black text-slate-400 text-xs text-center">{actualIdx + 1}</td>
+          <tr key={idx} className="hover:bg-slate-50 transition-colors border-b border-slate-50 group">
+             <td className="px-2 py-4 font-black text-slate-400 text-[11px] text-center sticky left-0 bg-white group-hover:bg-slate-50 z-10 w-12 min-w-[48px]">{actualIdx + 1}</td>
              {fallbackKeys.map((keyString, i) => {
                 // Find matching key in current row regardless of exact casing, since rows might have random blanks etc.
                 const matchingItemKey = Object.keys(item).find(k => k.trim().toUpperCase() === keyString.trim().toUpperCase()) || keyString;
                 return (
-                   <td key={i} className={`px-6 py-4 text-xs font-bold text-slate-700 ${i === 0 ? 'uppercase' : ''}`}>
-                      {String(item[matchingItemKey] || '-')}
+                   <td key={i} className={`px-6 py-4 text-[11px] font-bold text-slate-700 ${
+                        i === 0 
+                          ? 'uppercase sticky left-12 bg-white group-hover:bg-slate-50 z-10 border-r border-slate-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)] min-w-[180px] max-w-[280px]' 
+                          : ''
+                      }`}
+                      title={String(item[matchingItemKey] || '-')}
+                    >
+                      {i === 0 ? (
+                        <div className="line-clamp-2 whitespace-normal leading-tight">
+                          {String(item[matchingItemKey] || '-')}
+                        </div>
+                      ) : (
+                        String(item[matchingItemKey] || '-')
+                      )}
                    </td>
                 );
              })}
@@ -679,7 +702,7 @@ export function PpkiPemulihanView({ details, isAdmin, onSave }: PpkiPemulihanVie
 
          <div className="overflow-x-auto w-full min-h-[300px] relative">
             {loading && (
-               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex flex-col items-center justify-center">
+               <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
                   <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin shadow-lg"></div>
                   <p className="mt-4 text-sm font-black text-slate-600 uppercase tracking-widest animate-pulse">Menghubungkan ke Pangkalan Data...</p>
                </div>

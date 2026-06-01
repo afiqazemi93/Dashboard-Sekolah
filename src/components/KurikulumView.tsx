@@ -74,7 +74,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
     return [...(details.pentadbirs || []), ...(details.teachers || [])];
   }, [details.pentadbirs, details.teachers]);
 
-  const kurikulumData: KurikulumData = details.kurikulumData || {
+  const rawKurikulumData = details.kurikulumData || {
     panitiaList: PANITIA_DEFAULTS.map(p => ({
       id: Math.random().toString(36).substring(2, 9),
       name: p.name,
@@ -83,7 +83,14 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
       members: []
     })),
     simpUrl: 'https://simp.moe.gov.my',
-    simpButtonLabel: 'Buka Sistem SIMP'
+    simpButtonLabel: 'Pergi ke Aplikasi'
+  };
+
+  const kurikulumData: KurikulumData = {
+    ...rawKurikulumData,
+    simpButtonLabel: (!rawKurikulumData.simpButtonLabel || rawKurikulumData.simpButtonLabel === 'Buka Sistem SIMP')
+      ? 'Pergi ke Aplikasi'
+      : rawKurikulumData.simpButtonLabel
   };
 
   const filteredPanitia = useMemo(() => {
@@ -460,7 +467,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                       kurikulumData: { ...kurikulumData, simpButtonLabel: e.target.value }
                     })}
                     className="w-full px-5 py-4 bg-white border border-slate-200 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-emerald-100 focus:border-emerald-500 outline-none transition-all"
-                    placeholder="Contoh: Buka Sistem SIMP"
+                    placeholder="Contoh: Pergi ke Aplikasi"
                   />
                 </div>
                 <div className="space-y-1.5">

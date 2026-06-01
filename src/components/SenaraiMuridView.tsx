@@ -959,8 +959,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
             <table className="w-full text-left border-collapse min-w-[700px]">
                <thead className="bg-blue-600">
                    <tr className="border-b border-blue-700">
-                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] w-20">Bil</th>
-                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">
+                     <th className="px-2 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center w-16 min-w-[64px]">Bil</th>
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] sticky left-0 z-20 bg-blue-600 shadow-[4px_0_12px_rgba(0,0,0,0.1)] min-w-[160px] md:min-w-[200px] max-w-[240px] md:max-w-[300px]">
                         Nama Murid
                      </th>
                      <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">
@@ -974,14 +974,14 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                <tbody className="divide-y divide-slate-100">
                   {currentData.length > 0 ? currentData.map((s, idx) => (
                      <tr key={s.id} className="hover:bg-indigo-50/30 transition-all duration-200 group">
-                        <td className="px-6 py-4.5 text-xs font-bold text-slate-400">
-                           <span className="bg-slate-100 w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors tracking-tighter">
+                        <td className="px-2 py-4.5 text-xs font-bold text-slate-400 text-center">
+                           <span className="mx-auto bg-slate-100 w-8 h-8 rounded-lg flex items-center justify-center group-hover:bg-indigo-100 group-hover:text-indigo-600 transition-colors tracking-tighter">
                               {((currentPage - 1) * itemsPerPage + idx + 1).toString().padStart(2, '0')}
                            </span>
                         </td>
-                        <td className="px-6 py-4.5">
-                           <div className="flex flex-col">
-                              <p className="text-sm font-bold text-slate-800 group-hover:text-indigo-800 transition-colors uppercase tracking-tight">{s.name}</p>
+                        <td className="px-6 py-4.5 sticky left-0 z-10 bg-white group-hover:bg-[#f6f8ff] shadow-[4px_0_12px_rgba(0,0,0,0.05)] min-w-[160px] md:min-w-[200px] max-w-[240px] md:max-w-[280px]">
+                           <div className="flex flex-col w-full">
+                              <p className="text-sm font-bold text-slate-800 group-hover:text-indigo-800 transition-colors uppercase tracking-tight line-clamp-3 whitespace-normal break-words leading-snug" title={s.name}>{s.name}</p>
                            </div>
                         </td>
                         <td className="px-6 py-4.5">
@@ -1052,20 +1052,29 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                      <ChevronLeft className="w-4 h-4" />
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, idx) => idx + 1).map((page) => (
-                    <button
-                        key={page}
-                        type="button"
-                        onClick={() => setCurrentPage(page)}
-                        className={`min-w-[36px] h-[36px] flex items-center justify-center text-xs font-black rounded-xl transition-all ${
-                        currentPage === page
-                            ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
-                            : 'border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 bg-white shadow-sm'
-                        }`}
-                    >
-                        {page}
-                    </button>
-                  ))}
+                  {(() => {
+                     let startPage = Math.max(1, currentPage - 2);
+                     let endPage = startPage + 4;
+                     if (endPage > totalPages) {
+                        endPage = totalPages;
+                        startPage = Math.max(1, endPage - 4);
+                     }
+                     const pagesToShow = Array.from({length: endPage - startPage + 1}, (_, i) => startPage + i);
+                     return pagesToShow.map((page) => (
+                        <button
+                            key={page}
+                            type="button"
+                            onClick={() => setCurrentPage(page)}
+                            className={`min-w-[36px] h-[36px] flex items-center justify-center text-xs font-black rounded-xl transition-all ${
+                            currentPage === page
+                                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-500/20'
+                                : 'border border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900 bg-white shadow-sm'
+                            }`}
+                        >
+                            {page}
+                        </button>
+                      ));
+                  })()}
 
                   <button 
                     disabled={currentPage === totalPages} 
