@@ -422,11 +422,6 @@ export default function App() {
         ...basicDetails 
       } = timestampedDetails;
 
-      // Completely remove/clean uasaPbdScreenshots to purge from database
-      if (basicDetails.kurikulumData) {
-        delete basicDetails.kurikulumData.uasaPbdScreenshots;
-      }
-
       const basicDataToSave = {
         ...basicDetails,
         schoolSongLyrics: schoolSongLyrics || ""

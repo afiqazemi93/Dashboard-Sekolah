@@ -20,11 +20,19 @@ import {
   ArrowRight,
   Monitor,
   Library,
-  HandHeart
+  HandHeart,
+  ChevronLeft,
+  X,
+  MoveUp,
+  MoveDown,
+  MoveLeft,
+  MoveRight,
+  Loader2,
+  Maximize2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { SchoolDetails, Panitia, PanitiaMember, KurikulumData } from '../types';
-import { uploadBase64ToStorage } from '../supabase';
+import { uploadBase64ToStorage, uploadRawFileToStorage } from '../supabase';
 
 import { PpkiPemulihanView } from './PpkiPemulihanView';
 
@@ -66,9 +74,10 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
   const [isTeacherSelectModalOpen, setIsTeacherSelectModalOpen] = useState(false);
   const [teacherSearchQuery, setTeacherSearchQuery] = useState('');
   const [memberRoleToAssign, setMemberRoleToAssign] = useState<PanitiaMember['role']>('Guru Panitia');
-  const activeScreenshotIndex = null as number | null;
-  const setActiveScreenshotIndex = (val: any) => {};
-  const ChevronLeft = () => null;
+  
+  const [activeScreenshotIndex, setActiveScreenshotIndex] = useState<number | null>(null);
+  const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
+  const [uploadErrorMsg, setUploadErrorMsg] = useState<string | null>(null);
 
   const allAvailableTeachers = useMemo(() => {
     return [...(details.pentadbirs || []), ...(details.teachers || [])];
@@ -186,6 +195,78 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
       });
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleScreenshotUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+
+    setIsUploadingScreenshot(true);
+    try {
+      const newUrls: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        // Ensure original quality by using raw function
+        const url = await uploadRawFileToStorage(`kurikulum/uasa_screenshot_${Date.now()}_${i}.${file.type.split('/')[1] || 'jpg'}`, file);
+        newUrls.push(url);
+      }
+      
+      const currentScreenshots = kurikulumData.uasaPbdScreenshots || [];
+      onSave({
+        ...details,
+        kurikulumData: { 
+          ...kurikulumData, 
+          uasaPbdScreenshots: [...currentScreenshots, ...newUrls] 
+        }
+      });
+      setUploadErrorMsg(null);
+    } catch (err: any) {
+      const errMsg = err?.message || String(err);
+      if (errMsg.toLowerCase().includes('security policy')) {
+        setUploadErrorMsg("Ralat Sekuriti (RLS). Sila salin skrip SQL di panel utama sistem untuk cipta & benarkan akses kepada Bucket 'school_media' dalam Supabase anda.");
+      } else {
+        setUploadErrorMsg(`Gagal memuat naik imej: ${errMsg}`);
+      }
+    } finally {
+      setIsUploadingScreenshot(false);
+    }
+  };
+
+  const handleDeleteScreenshot = (index: number) => {
+    if (!confirm("Adakah anda pasti untuk memadam imej ini?")) return;
+    
+    const currentScreenshots = kurikulumData.uasaPbdScreenshots || [];
+    const newScreenshots = [...currentScreenshots];
+    newScreenshots.splice(index, 1);
+    
+    onSave({
+      ...details,
+      kurikulumData: { 
+        ...kurikulumData, 
+        uasaPbdScreenshots: newScreenshots 
+      }
+    });
+  };
+
+  const handleReorderScreenshot = (index: number, direction: 'up' | 'down') => {
+    const currentScreenshots = kurikulumData.uasaPbdScreenshots || [];
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === currentScreenshots.length - 1) return;
+    
+    const newScreenshots = [...currentScreenshots];
+    const swapIndex = direction === 'up' ? index - 1 : index + 1;
+    
+    const temp = newScreenshots[index];
+    newScreenshots[index] = newScreenshots[swapIndex];
+    newScreenshots[swapIndex] = temp;
+    
+    onSave({
+      ...details,
+      kurikulumData: { 
+        ...kurikulumData, 
+        uasaPbdScreenshots: newScreenshots 
+      }
+    });
   };
 
   const renderPanitiaTab = () => (
@@ -488,6 +569,142 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
           </div>
         </motion.div>
 
+        {/* Tangkap Layar Aplikasi Section */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/20"
+        >
+          <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h3 className="text-xl font-black text-slate-800 tracking-tight">Tangkap Layar Aplikasi</h3>
+            </div>
+            
+            {isAdmin && (
+              <label className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer shadow-lg shadow-blue-200 disabled:opacity-50">
+                <input type="file" accept="image/jpeg, image/png, image/webp" multiple onChange={handleScreenshotUpload} className="hidden" disabled={isUploadingScreenshot} />
+                {isUploadingScreenshot ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+                {isUploadingScreenshot ? 'Memuat Naik...' : 'Tambah Imej'}
+              </label>
+            )}
+          </div>
+
+          {uploadErrorMsg && (
+            <div className="mx-8 mt-6 p-5 bg-red-50 border border-red-200 rounded-3xl text-red-700 flex flex-col gap-3 shadow-md">
+              <div className="flex items-start gap-3">
+                <svg className="w-5 h-5 shrink-0 mt-0.5 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="flex flex-col gap-1 w-full">
+                  <span className="font-bold">{uploadErrorMsg}</span>
+                  {uploadErrorMsg.includes('Sekuriti') && (
+                    <div className="mt-2 text-xs bg-white border border-red-100 p-4 rounded-xl flex flex-col gap-2">
+                       <p className="font-semibold text-slate-700">Skrip Penyelesaian (Salin & laksanakan di SQL Editor Supabase anda):</p>
+                       <pre className="font-mono bg-slate-900 text-slate-300 p-4 rounded-lg overflow-x-auto text-[10px] sm:text-xs">
+{`insert into storage.buckets (id, name, public) values ('school_media', 'school_media', true) on conflict (id) do update set public = true;
+drop policy if exists "Public Access" on storage.objects;
+drop policy if exists "Public Insert" on storage.objects;
+drop policy if exists "Public Update" on storage.objects;
+drop policy if exists "Public Delete" on storage.objects;
+create policy "Public Access" on storage.objects for select to public using ( bucket_id = 'school_media' );
+create policy "Public Insert" on storage.objects for insert to public with check ( bucket_id = 'school_media' );
+create policy "Public Update" on storage.objects for update to public using ( bucket_id = 'school_media' );
+create policy "Public Delete" on storage.objects for delete to public using ( bucket_id = 'school_media' );`}
+                       </pre>
+                    </div>
+                  )}
+                </div>
+                <button 
+                  onClick={() => setUploadErrorMsg(null)}
+                  className="ml-auto text-red-400 hover:text-red-700 font-black p-1 hover:bg-red-100 rounded-lg transition-colors"
+                >✕</button>
+              </div>
+            </div>
+          )}
+
+          <div className="p-8 sm:p-10 bg-slate-50/50">
+            {(!kurikulumData.uasaPbdScreenshots || kurikulumData.uasaPbdScreenshots.length === 0) ? (
+              <div className="flex flex-col items-center justify-center py-20 text-slate-400">
+                {isUploadingScreenshot ? (
+                  <div className="flex flex-col items-center animate-pulse">
+                    <Loader2 className="w-16 h-16 animate-spin mb-4 text-slate-300" />
+                    <p className="font-bold text-sm uppercase tracking-widest">Sedang Memuat Naik...</p>
+                  </div>
+                ) : (
+                  <>
+                    <ImagePlus className="w-20 h-20 mb-4 opacity-50" />
+                    <p className="font-black text-sm uppercase tracking-widest">Tiada tangkap layar aplikasi tersedia</p>
+                  </>
+                )}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+                 {kurikulumData.uasaPbdScreenshots.map((url, idx) => (
+                   <div key={url + idx} className="relative group w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden shadow-md border border-slate-200 bg-white">
+                     <img 
+                       src={url} 
+                       alt={`Tangkap Layar ${idx + 1}`} 
+                       loading="lazy"
+                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                     />
+                     
+                     {/* User Hover to fullscreen */}
+                     <button 
+                       onClick={() => setActiveScreenshotIndex(idx)}
+                       className="absolute inset-0 bg-slate-900/0 hover:bg-slate-900/20 transition-all flex items-center justify-center z-10"
+                     >
+                       <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-all scale-75 group-hover:scale-100">
+                         <Maximize2 className="w-8 h-8" />
+                       </div>
+                     </button>
+
+                     {/* Admin Controls Layer */}
+                     {isAdmin && (
+                       <div className="absolute top-4 right-4 z-20 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                         <div className="flex flex-col gap-1 bg-white/90 backdrop-blur-sm p-1 rounded-xl shadow-lg border border-slate-200">
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); handleReorderScreenshot(idx, 'up'); }}
+                             disabled={idx === 0}
+                             className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg transition-colors"
+                           >
+                             <MoveLeft className="w-4 h-4 hidden sm:block" />
+                             <MoveUp className="w-4 h-4 block sm:hidden" />
+                           </button>
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); handleReorderScreenshot(idx, 'down'); }}
+                             disabled={idx === kurikulumData.uasaPbdScreenshots!.length - 1}
+                             className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 disabled:opacity-30 disabled:hover:bg-transparent rounded-lg transition-colors"
+                           >
+                             <MoveRight className="w-4 h-4 hidden sm:block" />
+                             <MoveDown className="w-4 h-4 block sm:hidden" />
+                           </button>
+                           <button 
+                             onClick={(e) => { e.stopPropagation(); handleDeleteScreenshot(idx); }}
+                             className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                           >
+                             <Trash2 className="w-4 h-4" />
+                           </button>
+                         </div>
+                       </div>
+                     )}
+                     
+                     <div className="absolute bottom-4 left-4 z-20 px-3 py-1.5 bg-slate-900/60 font-mono text-[10px] font-bold text-white/90 rounded-full tracking-widest backdrop-blur-md">
+                       {idx + 1} / {kurikulumData.uasaPbdScreenshots.length}
+                     </div>
+                   </div>
+                 ))}
+                 
+                 {isUploadingScreenshot && (
+                   <div className="w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden shadow-md border border-slate-200 bg-white flex flex-col items-center justify-center animate-pulse">
+                     <Loader2 className="w-10 h-10 animate-spin text-blue-500 mb-3" />
+                     <p className="text-sm font-bold text-slate-500 uppercase tracking-widest text-center px-4">Memuat Naik...</p>
+                   </div>
+                 )}
+              </div>
+            )}
+          </div>
+        </motion.div>
+
       </div>
     );
   };
@@ -780,7 +997,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
 
        {/* Screenshot Lightbox Modal */}
        <AnimatePresence>
-         {false && (
+         {activeScreenshotIndex !== null && kurikulumData.uasaPbdScreenshots && kurikulumData.uasaPbdScreenshots.length > 0 && (
            <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-8 bg-slate-950/95 backdrop-blur-2xl">
              <motion.div 
                initial={{ opacity: 0, scale: 0.95 }}
@@ -791,7 +1008,9 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                <button 
                  onClick={() => setActiveScreenshotIndex(null)}
                  className="absolute top-0 right-0 sm:top-4 sm:right-4 z-50 w-12 h-12 bg-white/10 hover:bg-white/20 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md"
-               >✕</button>
+               >
+                 <X className="w-6 h-6" />
+               </button>
 
                {/* Prev Button */}
                {activeScreenshotIndex > 0 && (
@@ -813,7 +1032,7 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                  </button>
                )}
 
-               <div className="w-full h-full max-h-[85vh] flex items-center justify-center relative touch-pan-x"
+               <div className="w-full h-full max-h-[85vh] flex items-center justify-center relative touch-pan-x cursor-pointer"
                     onClick={(e) => {
                       const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
                       const x = e.clientX - rect.left;
@@ -822,6 +1041,8 @@ export function KurikulumView({ details, isAdmin, onSave, activeTab = 'panitia' 
                         setActiveScreenshotIndex(activeScreenshotIndex - 1);
                       } else if (x > (2 * width) / 3 && activeScreenshotIndex < kurikulumData.uasaPbdScreenshots!.length - 1) {
                         setActiveScreenshotIndex(activeScreenshotIndex + 1);
+                      } else {
+                        setActiveScreenshotIndex(null);
                       }
                     }}
                >

@@ -83,6 +83,31 @@ export const compressImageBase64 = (base64Str: string, maxWidth = 1100, maxHeigh
  * If the storage bucket "school_media" is not created or fails,
  * it falls back to passing back the compressed base64 data URL so nothing breaks.
  */
+export const uploadRawFileToStorage = async (filePath: string, file: File): Promise<string> => {
+  if (!isSupabaseConfigured) {
+    throw new Error("Supabase is not configured.");
+  }
+
+  const cleanPath = filePath.replace(/^\/+/, '');
+
+  const { error: uploadError } = await supabase.storage
+    .from('school_media')
+    .upload(cleanPath, file, {
+      upsert: true,
+      contentType: file.type
+    });
+
+  if (uploadError) {
+    throw uploadError;
+  }
+
+  const { data } = supabase.storage
+    .from('school_media')
+    .getPublicUrl(cleanPath);
+
+  return data.publicUrl;
+};
+
 export const uploadBase64ToStorage = async (filePath: string, base64String: string): Promise<string> => {
   let activeBase64 = base64String;
   if (base64String && base64String.startsWith('data:image')) {
@@ -232,5 +257,18 @@ create policy "Allow public read and write" on public.school_data
   for all using (true) with check (true);
 
 -- 4. Polisi simpanan fail Storage (Sekiranya mahukan gambar & logo dimuat naik ke Storage)
--- Pastikan anda telah mencipta bucket bernama "school_media" di bahagian Storage Supabase anda terlebih dahulu.
+-- Cipta bucket bernama "school_media" supaya fail boleh disimpan
+insert into storage.buckets (id, name, public) 
+values ('school_media', 'school_media', true)
+on conflict (id) do update set public = true;
+
+drop policy if exists "Public Access" on storage.objects;
+drop policy if exists "Public Insert" on storage.objects;
+drop policy if exists "Public Update" on storage.objects;
+drop policy if exists "Public Delete" on storage.objects;
+
+create policy "Public Access" on storage.objects for select to public using ( bucket_id = 'school_media' );
+create policy "Public Insert" on storage.objects for insert to public with check ( bucket_id = 'school_media' );
+create policy "Public Update" on storage.objects for update to public using ( bucket_id = 'school_media' );
+create policy "Public Delete" on storage.objects for delete to public using ( bucket_id = 'school_media' );
 `;
