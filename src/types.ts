@@ -3,6 +3,19 @@ export interface PersonProfile {
   photoUrl: string;
 }
 
+export type KategoriKoko = 'Kelab & Persatuan' | 'Sukan & Permainan' | 'Badan Beruniform';
+
+export interface KokoUnit {
+  id: string;
+  kategori: KategoriKoko;
+  nama: string;
+  ketuaId: string; // Teacher ID
+  penolongId: string; // Teacher ID
+  ahliIds: string[]; // Teacher IDs
+  logoUrl?: string;
+  tempatPerjumpaan?: string;
+}
+
 export interface Teacher {
   id: string;
   name: string;
@@ -146,6 +159,7 @@ export interface SchoolDetails {
   ppkiGasUrl?: string;
   pemulihanGasUrl?: string;
   kokoGasUrl?: string;
+  kokoUnits?: KokoUnit[];
   ppkiStaffIds?: string[];
   pemulihanStaffIds?: string[];
   kebajikanTabs?: KebajikanTabConfig[];
@@ -163,4 +177,4 @@ export type TabId =
   | 'pentadbiran' | 'organisasi' | 'keberadaan' 
   | 'kurikulum' | 'kurikulum_panitia' | 'kurikulum_ppki' | 'kurikulum_uasa' 
   | 'hem' | 'senarai_murid' | 'hem_kehadiran' | 'hem_kebajikan' 
-  | 'kokurikulum' | 'koko_pencapaian';
+  | 'kokurikulum' | 'koko_pencapaian' | 'koko_profil_unit';

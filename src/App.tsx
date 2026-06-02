@@ -20,6 +20,7 @@ import { HemView } from './components/HemView';
 import { HemKehadiranView } from './components/HemKehadiranView';
 import { HemKebajikanView } from './components/HemKebajikanView';
 import { KokurikulumView } from './components/KokurikulumView';
+import { KokoProfilUnitView } from './components/KokoProfilUnitView';
 import { AdminLoginModal } from './components/AdminModals';
 import { TabId, SchoolDetails, ClassHeadcount, StudentRecord } from './types';
 import { generateDefaultTeachers } from './defaultTeachers';
@@ -729,7 +730,11 @@ export default function App() {
         return <HemView />;
       case 'kokurikulum':
       case 'koko_pencapaian':
-        if (activeTab === 'koko_pencapaian' || activeTab === 'kokurikulum') {
+      case 'koko_profil_unit':
+        if (activeTab === 'koko_profil_unit' || activeTab === 'kokurikulum') {
+          return <KokoProfilUnitView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
+        }
+        if (activeTab === 'koko_pencapaian') {
           return <KokurikulumView details={schoolDetails} isAdmin={isAdmin} onSave={handleSaveDetails} />;
         }
         return <ConstructionView tabId={activeTab as any} />;
@@ -805,14 +810,14 @@ export default function App() {
           {saveStatus === 'saving' && (
             <div className="mb-6 p-3 bg-blue-50 border border-blue-200 rounded-2xl flex items-center gap-3 shadow-sm text-blue-800 animate-pulse" id="supabase-saving-status">
               <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-              <p className="text-sm font-medium">Sedang menyelaraskan data anda ke pangkalan data Supabase...</p>
+              <p className="text-sm font-medium">Sedang menyimpan...</p>
             </div>
           )}
 
           {saveStatus === 'saved' && (
             <div className="mb-6 p-3 bg-green-50 border border-green-200 rounded-2xl flex items-center justify-between shadow-sm text-green-800 text-sm" id="supabase-saved-status">
               <div className="flex items-center gap-2 font-medium">
-                <span>✅ Berjaya Disimpan ke Database Supabase</span>
+                <span>✅ Berjaya Disimpan.</span>
               </div>
               <button 
                 onClick={() => setSaveStatus('idle')} 

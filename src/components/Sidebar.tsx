@@ -57,7 +57,7 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
     if (['hem', 'senarai_murid', 'hem_kehadiran', 'hem_kebajikan'].includes(activeTab)) {
       setIsHemExpanded(true);
     }
-    if (['kokurikulum', 'koko_pencapaian'].includes(activeTab)) {
+    if (['kokurikulum', 'koko_pencapaian', 'koko_profil_unit'].includes(activeTab)) {
       setIsKokoExpanded(true);
     }
   }, [activeTab]);
@@ -108,8 +108,9 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
       icon: Trophy,
       expanded: isKokoExpanded,
       setExpanded: setIsKokoExpanded,
-      defaultSubTab: 'koko_pencapaian' as TabId,
+      defaultSubTab: 'koko_profil_unit' as TabId,
       subTabs: [
+        { id: 'koko_profil_unit' as TabId, label: 'Profil Unit Kokurikulum', icon: Users },
         { id: 'koko_pencapaian' as TabId, label: 'Pencapaian Kokurikulum', icon: Award },
       ]
     },
@@ -147,7 +148,7 @@ export function Sidebar({ activeTab, onTabChange, onOpenLogin, isAdmin, onLogout
               <div className="absolute inset-0 bg-blue-500/10 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity blur-sm pointer-events-none" />
             </div>
             <div className="flex flex-col justify-center min-w-0">
-              <h1 className="font-extrabold text-white text-[13px] lg:text-[14px] tracking-tight leading-none truncate">Dashboard SKBL</h1>
+              <h1 className="font-extrabold text-white text-[13px] lg:text-[14px] tracking-tight leading-normal truncate py-0.5">MySKBL</h1>
             </div>
           </div>
         </div>
