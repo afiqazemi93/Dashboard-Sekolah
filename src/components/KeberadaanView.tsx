@@ -253,7 +253,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
             }`}
           >
             <PieChart className="w-4 h-4" />
-            <span>Analitik Keberadaan</span>
+            <span>Analitik</span>
           </button>
         </div>
       </div>

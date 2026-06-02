@@ -92,7 +92,6 @@ export function KurikulumView({
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
   const [isUploadingScreenshot, setIsUploadingScreenshot] = useState(false);
   const [uploadErrorMsg, setUploadErrorMsg] = useState<string | null>(null);
-  const [isBannerZoomOpen, setIsBannerZoomOpen] = useState(false);
 
   const allAvailableTeachers = useMemo(() => {
     return [...(details.pentadbirs || []), ...(details.teachers || [])];
@@ -107,15 +106,16 @@ export function KurikulumView({
       members: [],
     })),
     simpUrl: "https://simp.moe.gov.my",
-    simpButtonLabel: "Pergi ke Aplikasi",
+    simpButtonLabel: "Pergi ke Sistem",
   };
 
   const kurikulumData: KurikulumData = {
     ...rawKurikulumData,
     simpButtonLabel:
       !rawKurikulumData.simpButtonLabel ||
-      rawKurikulumData.simpButtonLabel === "Buka Sistem SIMP"
-        ? "Pergi ke Aplikasi"
+      rawKurikulumData.simpButtonLabel === "Buka Sistem SIMP" ||
+      rawKurikulumData.simpButtonLabel === "Pergi ke Aplikasi"
+        ? "Pergi ke Sistem"
         : rawKurikulumData.simpButtonLabel,
   };
 
@@ -621,15 +621,8 @@ export function KurikulumView({
           <div className="relative group bg-slate-50 min-h-[300px] flex items-center justify-center p-4">
             {banner ? (
               <div
-                onClick={() => setIsBannerZoomOpen(true)}
-                className="relative cursor-zoom-in w-full max-w-4xl group-hover:shadow-2xl group-hover:scale-[1.01] transition-all duration-300 rounded-3xl overflow-hidden shadow-lg border border-slate-100"
+                className="relative w-full max-w-4xl group-hover:shadow-2xl group-hover:scale-[1.01] transition-all duration-300 rounded-3xl overflow-hidden shadow-lg border border-slate-100"
               >
-                {/* Mobile instruction banner */}
-                <div className="absolute top-4 right-4 bg-slate-900/80 backdrop-blur-md text-white font-black text-[10px] sm:text-xs py-1.5 px-3.5 rounded-full shadow-lg select-none border border-white/10 z-10 flex items-center gap-1.5 hover:bg-slate-900 leading-none">
-                  <Maximize2 className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Tekan untuk Zoom</span>
-                </div>
-
                 <img
                   src={banner}
                   alt="Banner UASA & PBD"
@@ -1371,9 +1364,9 @@ create policy "Public Delete" on storage.objects for delete to public using ( bu
                     onClick={() =>
                       setActiveScreenshotIndex(activeScreenshotIndex - 1)
                     }
-                    className="absolute left-0 sm:left-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-white/10 hover:bg-blue-600 hover:border-blue-600 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md hidden sm:flex"
+                    className="absolute left-2 sm:left-4 top-1/2 -translate-y-1/2 z-[130] w-10 h-10 sm:w-12 sm:h-12 bg-slate-900/50 hover:bg-blue-600 hover:border-blue-600 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md"
                   >
-                    <ChevronLeft className="w-6 h-6" />
+                    <ChevronLeft className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 )}
 
@@ -1384,9 +1377,9 @@ create policy "Public Delete" on storage.objects for delete to public using ( bu
                     onClick={() =>
                       setActiveScreenshotIndex(activeScreenshotIndex + 1)
                     }
-                    className="absolute right-0 sm:right-4 top-1/2 -translate-y-1/2 z-50 w-12 h-12 bg-white/10 hover:bg-blue-600 hover:border-blue-600 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md hidden sm:flex"
+                    className="absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 z-[130] w-10 h-10 sm:w-12 sm:h-12 bg-slate-900/50 hover:bg-blue-600 hover:border-blue-600 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md"
                   >
-                    <ChevronRight className="w-6 h-6" />
+                    <ChevronRight className="w-5 h-5 sm:w-6 sm:h-6" />
                   </button>
                 )}
 
@@ -1436,7 +1429,10 @@ create policy "Public Delete" on storage.objects for delete to public using ( bu
                 >
                   <div
                     className="w-full max-w-4xl px-2 shrink-0 mb-8 sm:mb-0"
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                      // Prevent clicks inside the div from triggering the background click that closes or changes
+                      e.stopPropagation();
+                    }}
                     onTouchStart={(e) => e.stopPropagation()}
                     onTouchEnd={(e) => e.stopPropagation()}
                   >
@@ -1445,6 +1441,7 @@ create policy "Public Delete" on storage.objects for delete to public using ( bu
                         kurikulumData.uasaPbdScreenshots[activeScreenshotIndex]
                       }
                       alt={`Screenshot ${activeScreenshotIndex + 1}`}
+                      className="w-full h-auto max-h-[80vh] object-contain mx-auto rounded-2xl"
                     />
                   </div>
                 </div>
@@ -1456,36 +1453,6 @@ create policy "Public Delete" on storage.objects for delete to public using ( bu
               </motion.div>
             </div>
           )}
-      </AnimatePresence>
-
-      {/* Main Banner Zoom Lightbox */}
-      <AnimatePresence>
-        {isBannerZoomOpen && banner && (
-          <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 sm:p-8 bg-slate-950/95 backdrop-blur-2xl">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full h-full max-w-7xl flex flex-col items-center justify-center"
-            >
-              <button
-                onClick={() => setIsBannerZoomOpen(false)}
-                className="absolute top-4 right-4 z-[130] w-12 h-12 bg-white/10 hover:bg-red-600 hover:border-red-600 border border-white/20 rounded-full flex items-center justify-center text-white transition-all backdrop-blur-md cursor-pointer"
-              >
-                <X className="w-6 h-6" />
-              </button>
-
-              <div
-                className="w-full max-w-4xl px-2 shrink-0"
-                onClick={(e) => e.stopPropagation()}
-                onTouchStart={(e) => e.stopPropagation()}
-                onTouchEnd={(e) => e.stopPropagation()}
-              >
-                <TouchZoomImage src={banner} alt="Banner UASA & PBD" />
-              </div>
-            </motion.div>
-          </div>
-        )}
       </AnimatePresence>
     </div>
   );
@@ -1530,6 +1497,7 @@ function OrgCard({
       >
         {member.photoUrl ? (
           <img
+            loading="eager" fetchPriority="high"
             src={member.photoUrl}
             alt={member.name}
             className="w-full h-full object-cover"

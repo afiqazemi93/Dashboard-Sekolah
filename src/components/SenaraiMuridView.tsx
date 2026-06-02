@@ -966,8 +966,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                      <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">
                         Kelas
                      </th>
-                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">Jantina</th>
-                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em]">Kaum</th>
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center w-24">Jantina</th>
+                     <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center w-32">Kaum</th>
                      {isAdmin && <th className="px-6 py-5 text-sm font-black text-white uppercase tracking-[0.1em] text-center">Tindakan</th>}
                   </tr>
                </thead>
@@ -1000,16 +1000,37 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                               </span>
                            </div>
                         </td>
-                        <td className="px-6 py-4.5">
-                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' : 'bg-rose-50 text-rose-600 border border-rose-100/50'}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${s.gender === 'Lelaki' ? 'bg-blue-400' : 'bg-rose-400'}`}></span>
-                              {s.gender}
+                        <td className="px-6 py-4.5 text-center">
+                           <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider ${s.gender === 'Lelaki' ? 'bg-blue-50 text-blue-600 border border-blue-100/50' : 'bg-rose-50 text-rose-600 border border-rose-100/50'} justify-center w-12 mx-auto`}>
+                              {s.gender === 'Lelaki' ? 'L' : 'P'}
                            </span>
                         </td>
-                        <td className="px-6 py-4.5">
-                           <span className="inline-flex items-center px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
-                              {s.race || guessRace(s.name)}
-                           </span>
+                        <td className="px-6 py-4.5 text-center">
+                           {(() => {
+                              const raceStr = (s.race || guessRace(s.name)).toLowerCase();
+                              let badgeClass = "bg-slate-100 text-slate-600 border-slate-200";
+                              let displayRace = raceStr.toUpperCase();
+                              
+                              if (raceStr.includes('melayu')) {
+                                 badgeClass = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                                 displayRace = 'MELAYU';
+                              } else if (raceStr.includes('cina')) {
+                                 badgeClass = 'bg-rose-50 text-rose-700 border-rose-200';
+                                 displayRace = 'CINA';
+                              } else if (raceStr.includes('india')) {
+                                 badgeClass = 'bg-orange-50 text-orange-700 border-orange-200';
+                                 displayRace = 'INDIA';
+                              } else {
+                                 badgeClass = 'bg-slate-50 text-slate-600 border-slate-200';
+                                 displayRace = 'LAIN-LAIN';
+                              }
+
+                              return (
+                                 <span className={`inline-flex items-center justify-center w-[85px] py-1.5 rounded-xl text-[10px] font-black tracking-wider border ${badgeClass} uppercase`}>
+                                    {displayRace}
+                                 </span>
+                              );
+                           })()}
                         </td>
                         {isAdmin && (
                            <td className="px-6 py-4.5 text-center whitespace-nowrap">

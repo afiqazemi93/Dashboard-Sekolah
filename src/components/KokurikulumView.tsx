@@ -559,7 +559,7 @@ export function KokurikulumView({
                 <th className="px-6 py-4 font-black sticky lg:static left-0 lg:left-auto bg-[#bc1437] z-20 min-w-[180px] max-w-[280px]">
                   Nama Murid
                 </th>
-                <th className="px-6 py-4 font-black">Tahun/Kelas</th>
+                <th className="px-6 py-4 font-black text-center">Tahun/Kelas</th>
                 <th className="px-6 py-4 font-black">Pertandingan/Aktiviti</th>
                 <th className="px-6 py-4 font-black text-center">Peringkat</th>
                 <th className="px-6 py-4 font-black text-center">Pencapaian</th>
@@ -639,7 +639,7 @@ export function KokurikulumView({
                           {nama || "-"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-xs">
+                      <td className="px-6 py-4 text-xs text-center">
                         <div className="font-bold text-slate-700 uppercase">
                           {tahun || "-"}
                         </div>

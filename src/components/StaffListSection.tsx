@@ -302,11 +302,11 @@ export function StaffListSection({
             <div key={tc.id} className="bg-white border border-gray-100/60 hover:border-gray-200 rounded-[16px] p-4 flex items-center space-x-4 relative group shadow-[0_4px_20px_rgba(0,0,0,0.04)] hover:shadow-lg transition-all">
               <div className="relative w-16 h-16 sm:w-18 sm:h-18 shrink-0 select-none">
                 <img 
-                  loading="lazy" decoding="async"
+                  loading="eager" fetchPriority="high"
                   src={tc.photoUrl || "https://ui-avatars.com/api/?name=Staff&background=EBF4FF&color=3B82F6"} 
                   alt={tc.name} 
                   referrerPolicy="no-referrer"
-                  className="w-full h-full object-cover rounded-full shadow-md border-2 border-white" 
+                  className="w-full h-full object-cover rounded-full shadow-md border-2 border-white bg-slate-100" 
                 />
                 <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 text-[12px] font-black bg-blue-600 text-white rounded-full leading-none border-2 border-white shadow-md z-10 whitespace-nowrap">
                   {tc.grade}
