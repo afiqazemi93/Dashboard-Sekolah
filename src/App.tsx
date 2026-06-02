@@ -66,6 +66,14 @@ const fallbackDetails: SchoolDetails = {
   mission: 'Melestarikan Sistem Pendidikan Yang Berkualiti Untuk Mengoptimalkan Potensi Individu Bagi Memenuhi Aspirasi Negara',
   keberadaanGasUrl: 'https://script.google.com/macros/s/AKfycbzZnxUYMEwyc5a1cQIVQfzdQvcfn1_qa75fz9Yu8tkR6GFscOY1aSLYFU5M1oZU_qxszw/exec',
   schoolSongLyrics: 'Kami murid SK Batu Lanchang\nBerikrar dan berjanji\nBelajar tekun berusaha\nMencapai cita-cita mulia',
+  pautan: {
+    hrmis: 'https://hrmis2.eghrmis.gov.my/HRMISNET/Common/Main/Login.aspx',
+    eoperasi: 'https://eoperasi.moe.gov.my/',
+    epenyatagaji: 'https://epenyatagaji-laporan.anm.gov.my/Layouts/Login/Login.aspx',
+    eprema: 'https://www.eprema.com.my/SK/login.asp',
+    idme: 'https://idme.moe.gov.my/login',
+    bukuPengurusan: 'https://drive.google.com/file/d/1cZDNA37-Vpw5kFJEPVFsraOTPSNv2pdI/view?usp=sharing'
+  },
   announcements: [
     { id: '1', date: '20\nMEI', title: 'Mesyuarat Kurikulum Bil. 3/2024', desc: '20 Mei 2024 (Isnin) | 2:30 Petang | Bilik Mesyuarat' },
     { id: '2', date: '18\nMEI', title: 'Program Gotong-Royong Perdana', desc: '18 Mei 2024 (Sabtu) | 8:00 Pagi | Perkarangan Sekolah' },
@@ -237,7 +245,14 @@ export default function App() {
 
       // 1. General Details
       if (detailsData && !(detailsData instanceof Error)) {
-        data = { ...data, ...detailsData };
+        data = { 
+          ...data, 
+          ...detailsData,
+          pautan: {
+            ...fallbackDetails.pautan,
+            ...(detailsData.pautan || {})
+          }
+        };
       } else if (!detailsData) {
         seedPromises.push(
           setDocument('details', {
@@ -264,7 +279,8 @@ export default function App() {
             vision: data.vision || fallbackDetails.vision,
             mission: data.mission || fallbackDetails.mission,
             keberadaanGasUrl: data.keberadaanGasUrl || fallbackDetails.keberadaanGasUrl,
-            schoolSongLyrics: data.schoolSongLyrics || fallbackDetails.schoolSongLyrics
+            schoolSongLyrics: data.schoolSongLyrics || fallbackDetails.schoolSongLyrics,
+            pautan: data.pautan || fallbackDetails.pautan
           })
         );
       }

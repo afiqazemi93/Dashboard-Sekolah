@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { SchoolDetails, Announcement, CalendarEvent, Teacher } from '../types';
-import { Users, GraduationCap, Briefcase, Clock, MapPin, Mail, Globe, Phone, Edit2, Save, X, Facebook, Youtube, BookOpen, LayoutDashboard, Map, Calendar, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, UserCheck, School, Landmark, Compass, Award, Shield, Maximize2, Layers, Plus, Trash2, Search } from 'lucide-react';
+import { Users, GraduationCap, Briefcase, Clock, MapPin, Mail, Globe, Phone, Edit2, Save, X, Facebook, Youtube, BookOpen, LayoutDashboard, Map, Calendar, Megaphone, Link as LinkIcon, ChevronLeft, ChevronRight, UserCheck, School, Landmark, Compass, Award, Shield, Maximize2, Layers, Plus, Trash2, Search, FileText } from 'lucide-react';
 
 import { StaffListSection } from './StaffListSection';
 import { AdminTakwimEditor } from './AdminTakwimEditor';
-import { uploadBase64ToStorage } from '../supabase';
+import { uploadBase64ToStorage, uploadRawFileToStorage, isSupabaseConfigured } from '../supabase';
+import { TouchZoomImage } from './TouchZoomImage';
 
 interface MaklumatSekolahViewProps {
   details: SchoolDetails;
@@ -16,6 +17,38 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<SchoolDetails>(details);
   const [isPlanOpen, setIsPlanOpen] = useState(false);
+  const [isUploadingPlan, setIsUploadingPlan] = useState(false);
+
+  const handleSchoolPlanUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 15 * 1024 * 1024) { 
+        alert("Fail gambar terlalu besar. Sila muat naik gambar kurang dari 15MB.");
+        return;
+    }
+
+    setIsUploadingPlan(true);
+    try {
+      if (isSupabaseConfigured) {
+        const ext = file.name.split('.').pop() || 'png';
+        const filePath = `maklumat/pelan_sekolah_${Date.now()}.${ext}`;
+        const publicUrl = await uploadRawFileToStorage(filePath, file);
+        setFormData(prev => ({ ...prev, schoolPlanImageUrl: publicUrl }));
+      } else {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setFormData(prev => ({ ...prev, schoolPlanImageUrl: reader.result as string }));
+        };
+        reader.readAsDataURL(file);
+      }
+    } catch (err: any) {
+      console.error("Upload failed", err);
+      alert("Gagal memuat naik imej berkualiti tinggi: " + (err.message || err));
+    } finally {
+      setIsUploadingPlan(false);
+    }
+  };
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string>(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -252,15 +285,22 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
                   <textarea value={formData.schoolSongLyrics || ''} onChange={(e) => setFormData({ ...formData, schoolSongLyrics: e.target.value })} rows={4} className={`${inputClass} resize-none`} placeholder="Lirik lagu sekolah..." />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className={labelClass}>Pelan Sekolah (Gambar)</label>
+                  <label className={labelClass}>Pelan Sekolah (Gambar - Kualiti Tinggi)</label>
                   <input 
                     type="file" 
                     accept="image/*"
-                    onChange={(e) => handleImageUpload(e, (base64) => setFormData({ ...formData, schoolPlanImageUrl: base64 }), 1200)} 
+                    onChange={handleSchoolPlanUpload} 
                     className="w-full text-sm text-gray-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                    disabled={isUploadingPlan}
                   />
-                  {formData.schoolPlanImageUrl && (
-                    <img loading="lazy" decoding="async" src={formData.schoolPlanImageUrl} alt="Pelan Sekolah" className="mt-3 max-h-32 object-contain rounded-lg border border-gray-200" />
+                  {isUploadingPlan && (
+                    <p className="text-xs text-blue-600 font-bold mt-2 animate-pulse">Memuat naik imej kualiti tinggi... Sila tunggu...</p>
+                  )}
+                  {formData.schoolPlanImageUrl && !isUploadingPlan && (
+                    <div className="mt-3">
+                      <p className="text-[10px] text-emerald-600 font-bold mb-1">✓ Imej Berkualiti Tinggi Sedia Disimpan</p>
+                      <img loading="lazy" decoding="async" src={formData.schoolPlanImageUrl} alt="Pelan Sekolah" className="max-h-32 object-contain rounded-lg border border-gray-200" />
+                    </div>
                   )}
                 </div>
               </div>
@@ -290,6 +330,90 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
                     placeholder="Contoh: https://script.google.com/macros/s/.../exec" 
                   />
                   <p className="text-xs text-gray-500 mt-1">Pautan Web App Apps Script (GET) yang akan mengembalikan rekod keberadaan hari ini dalam format JSON.</p>
+                </div>
+              </div>
+            </section>
+
+            <section>
+              <h4 className="text-sm font-bold text-blue-600 uppercase tracking-wider mb-4 border-b border-gray-200 pb-2">Pautan Luar (6 Butang Pintar)</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className={labelClass}>HRMIS (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.hrmis || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), hrmis: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>E-Operasi (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.eoperasi || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), eoperasi: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>E-Penyata Gaji (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.epenyatagaji || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), epenyatagaji: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>E-Prema (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.eprema || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), eprema: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>idMe (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.idme || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), idme: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
+                </div>
+                <div>
+                  <label className={labelClass}>Buku Pengurusan Sekolah (URL)</label>
+                  <input 
+                    type="text" 
+                    value={formData.pautan?.bukuPengurusan || ''} 
+                    onChange={(e) => setFormData({ 
+                      ...formData, 
+                      pautan: { ...(formData.pautan || {}), bukuPengurusan: e.target.value } 
+                    })} 
+                    className={inputClass} 
+                    placeholder="https://..." 
+                  />
                 </div>
               </div>
             </section>
@@ -495,6 +619,65 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
         />
       </div>
 
+      {/* 5. KAD PAUTAN PINTAR (SISTEM LUARAN / PAUTAN PERKHIDMATAN) */}
+      <div className="bg-white rounded-[24px] p-6 lg:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-gray-100/80 text-left mt-5">
+        <h3 className="font-extrabold text-gray-950 text-xl mb-6 flex items-center space-x-2.5 tracking-tight border-b border-gray-50 pb-4">
+          <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
+          <span>Pautan Luar & Sistem</span>
+        </h3>
+        
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+          <PautanButton 
+            title="HRMIS" 
+            desc="Sistem Maklumat Pengurusan Sumber Manusia" 
+            url={details.pautan?.hrmis} 
+            color="hover:border-blue-200 hover:bg-blue-50/20 text-gray-950 bg-white"
+            iconColor="text-blue-600 bg-blue-50 group-hover:bg-blue-600 group-hover:text-white"
+            icon={UserCheck} 
+          />
+          <PautanButton 
+            title="E-Operasi" 
+            desc="Sistem Pengurusan Guru & Bukan Guru" 
+            url={details.pautan?.eoperasi} 
+            color="hover:border-emerald-200 hover:bg-emerald-50/20 text-gray-950 bg-white"
+            iconColor="text-emerald-600 bg-emerald-50 group-hover:bg-emerald-600 group-hover:text-white"
+            icon={Briefcase} 
+          />
+          <PautanButton 
+            title="E-Penyata Gaji" 
+            desc="Penyata Gaji Bulanan Perkhidmatan Awam" 
+            url={details.pautan?.epenyatagaji} 
+            color="hover:border-rose-200 hover:bg-rose-50/20 text-gray-950 bg-white"
+            iconColor="text-rose-600 bg-rose-50 group-hover:bg-rose-600 group-hover:text-white"
+            icon={Landmark} 
+          />
+          <PautanButton 
+            title="E-Prema" 
+            desc="Perancangan E-Rekod Mengajar" 
+            url={details.pautan?.eprema} 
+            color="hover:border-violet-200 hover:bg-violet-50/20 text-gray-950 bg-white"
+            iconColor="text-violet-600 bg-violet-50 group-hover:bg-violet-600 group-hover:text-white"
+            icon={FileText} 
+          />
+          <PautanButton 
+            title="idMe" 
+            desc="Sistem Pengurusan IDentiti KPM" 
+            url={details.pautan?.idme} 
+            color="hover:border-amber-200 hover:bg-amber-50/20 text-gray-950 bg-white"
+            iconColor="text-amber-600 bg-amber-50 group-hover:bg-amber-600 group-hover:text-white"
+            icon={Compass} 
+          />
+          <PautanButton 
+            title="Buku Pengurusan Sekolah" 
+            desc="Panduan & Takwim Pengurusan Sekolah Tahunan" 
+            url={details.pautan?.bukuPengurusan} 
+            color="hover:border-indigo-200 hover:bg-indigo-50/20 text-gray-950 bg-white"
+            iconColor="text-indigo-600 bg-indigo-50 group-hover:bg-indigo-600 group-hover:text-white"
+            icon={BookOpen} 
+          />
+        </div>
+      </div>
+
       <div className="mt-5">
       </div>
 
@@ -514,8 +697,8 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-4 bg-gray-100 flex-1 overflow-auto flex justify-center items-center">
-              <img loading="lazy" decoding="async" src={details.schoolPlanImageUrl} alt="Pelan Sekolah" className="max-w-full rounded-xl shadow-sm object-contain" />
+            <div className="p-4 bg-slate-900 flex-1 overflow-hidden flex flex-col justify-center items-center">
+              <TouchZoomImage src={details.schoolPlanImageUrl} alt="Pelan Sekolah" />
             </div>
           </div>
         </div>
@@ -779,6 +962,46 @@ function CalendarSection({ calendarEvents, selectedDate, onSelectDate }: { calen
          </div>
        </div>
     </div>
+  );
+}
+
+function PautanButton({ 
+  title, 
+  desc, 
+  url, 
+  color, 
+  iconColor, 
+  icon: Icon 
+}: { 
+  title: string; 
+  desc: string; 
+  url?: string; 
+  color: string; 
+  iconColor: string; 
+  icon: any; 
+}) {
+  if (!url) return null;
+  const href = url.startsWith('http') ? url : `https://${url}`;
+  
+  return (
+    <a 
+      href={href} 
+      target="_blank" 
+      rel="noopener noreferrer" 
+      className={`flex items-start p-4 rounded-2xl border border-gray-100 transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${color} group`}
+    >
+      <div className={`p-3 rounded-xl mr-4 shrink-0 transition-all duration-300 ${iconColor} group-hover:scale-110`}>
+        <Icon className="w-5 h-5" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h4 className="font-extrabold text-[15px] tracking-tight mb-1 group-hover:underline text-gray-900">
+          {title}
+        </h4>
+        <p className="text-gray-500 text-xs leading-normal font-medium line-clamp-2">
+          {desc}
+        </p>
+      </div>
+    </a>
   );
 }
 

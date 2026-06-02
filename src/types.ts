@@ -96,6 +96,15 @@ export interface KebajikanTabConfig {
   url: string;
 }
 
+export interface PautanLinks {
+  hrmis?: string;
+  eoperasi?: string;
+  epenyatagaji?: string;
+  eprema?: string;
+  idme?: string;
+  bukuPengurusan?: string;
+}
+
 export interface SchoolDetails {
   name: string;
   logoUrl: string;
@@ -145,6 +154,7 @@ export interface SchoolDetails {
   classData?: ClassHeadcount[];
   students?: StudentRecord[];
   kurikulumData?: KurikulumData;
+  pautan?: PautanLinks;
   updatedAt?: number;
 }
 

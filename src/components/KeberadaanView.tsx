@@ -230,25 +230,32 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
         </div>
       </div>
 
-      <div className="flex border-b border-gray-200 mb-6">
-        <button
-          onClick={() => setActiveSubTab('senarai')}
-          className={`pb-3 px-4 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
-            activeSubTab === 'senarai' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          <LayoutList className="w-4 h-4" />
-          Rekod Harian
-        </button>
-        <button
-          onClick={() => setActiveSubTab('analitik')}
-          className={`pb-3 px-4 flex items-center gap-2 font-medium text-sm transition-colors border-b-2 ${
-            activeSubTab === 'analitik' ? 'border-indigo-600 text-indigo-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-          }`}
-        >
-          <PieChart className="w-4 h-4" />
-          Analitik Keberadaan Guru
-        </button>
+      {/* Sub Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+        <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 max-w-max">
+          <button 
+            onClick={() => setActiveSubTab('senarai')}
+            className={`px-6 py-3 font-semibold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+              activeSubTab === 'senarai' 
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 scale-100 font-extrabold' 
+                : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+            }`}
+          >
+            <LayoutList className="w-4 h-4" />
+            <span>Rekod Harian</span>
+          </button>
+          <button 
+            onClick={() => setActiveSubTab('analitik')}
+            className={`px-6 py-3 font-semibold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+              activeSubTab === 'analitik' 
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 scale-100 font-extrabold' 
+                : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+            }`}
+          >
+            <PieChart className="w-4 h-4" />
+            <span>Analitik Keberadaan</span>
+          </button>
+        </div>
       </div>
 
       {activeSubTab === 'analitik' ? (
