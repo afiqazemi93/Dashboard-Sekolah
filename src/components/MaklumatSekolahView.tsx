@@ -490,9 +490,12 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
               <span>Kod Sekolah: {details.code}</span>
             </div>
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-950 tracking-tight mb-3 uppercase leading-none select-none">{details.name}</h2>
-            <p className="text-gray-500 font-medium italic text-[13px] sm:text-[15px] mx-auto md:mx-0 leading-relaxed pl-0 md:pl-3 border-l-0 md:border-l-2 md:border-blue-500/30">
-              "{details.motto}"
-            </p>
+            <div className="flex justify-center md:justify-start mt-1">
+              <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl text-white text-[10px] sm:text-xs font-black tracking-widest uppercase shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-700">
+                <Award className="w-4 h-4 text-yellow-400" />
+                <span>{details.motto}</span>
+              </div>
+            </div>
           </div>
         </div>
 
