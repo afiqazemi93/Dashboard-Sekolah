@@ -351,16 +351,16 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-blue-600">
               <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider w-16">
+                <th scope="col" className="px-6 py-5 text-left text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em] w-16">
                   Bil.
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-left text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em]">
                   Nama Guru / Staf
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-center text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em]">
                   Jenis Keberadaan
                 </th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-left text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em]">
                   Butiran
                 </th>
               </tr>
@@ -370,22 +370,22 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                 filteredRecords.map((item, index) => {
                   return (
                     <tr key={item.staff.id} className="hover:bg-slate-50/50 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      <td className="px-6 py-4.5 whitespace-nowrap text-[11px] lg:text-sm text-gray-500 font-bold">
                         {index + 1}.
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-6 py-4.5 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10">
                             <img className="h-10 w-10 rounded-full border border-gray-200 object-cover" src={item.staff.photoUrl} alt="" />
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{item.staff.name}</div>
+                            <div className="text-[11px] lg:text-sm font-bold text-slate-800 uppercase tracking-tight">{item.staff.name}</div>
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex flex-col items-start gap-1">
-                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold border ${item.status === 'Hadir' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                      <td className="px-6 py-4.5 whitespace-nowrap text-center">
+                        <div className="flex flex-col items-center gap-1">
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] lg:text-xs font-black tracking-wider uppercase border justify-center ${item.status === 'Hadir' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
                             {item.jenisKeberadaan || item.status}
                           </span>
                           {item.tarikhMula && item.tarikhAkhir && (() => {
@@ -395,7 +395,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                             const d2 = isNaN(t2.getTime()) ? '' : t2.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' });
                             if (d1 && d2 && d1 !== d2) {
                               return (
-                                <span className="text-xs text-slate-500 font-medium ml-1">
+                                <span className="text-[10px] lg:text-xs text-slate-500 font-medium ml-1">
                                   Mula: {d1} - Hingga: {d2}
                                 </span>
                               );
@@ -404,15 +404,15 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                           })()}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-normal">
-                        <span className="text-sm text-gray-700">{item.butiran || '-'}</span>
+                      <td className="px-6 py-4.5 whitespace-normal">
+                        <span className="text-[11px] lg:text-sm font-semibold text-gray-700">{item.butiran || '-'}</span>
                       </td>
                     </tr>
                   );
                 })
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-sm text-gray-500">
+                  <td colSpan={4} className="px-6 py-8 text-center text-[11px] lg:text-sm text-gray-500">
                     Tiada rekod dijumpai untuk carian/tapisan ini.
                   </td>
                 </tr>

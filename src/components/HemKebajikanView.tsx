@@ -311,31 +311,31 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
   const renderTableHead = () => {
     if (activeTabId === 'rmt_pss') {
       return (
-        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs lg:text-sm uppercase tracking-wider`}>
-          <th className="px-1 lg:px-4 py-4 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
-          <th className="px-2 lg:px-6 py-4 font-black text-left w-auto bg-transparent">
+        <tr className={`${themeTableHead} text-white text-[11px] lg:text-sm uppercase tracking-[0.1em]`}>
+          <th className="px-1 lg:px-4 py-5 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-left w-auto bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Nama Murid</div>
           </th>
-          <th className="px-2 lg:px-6 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[200px] bg-transparent">
+          <th className="px-2 lg:px-6 py-5 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[200px] bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Kelas</div>
           </th>
-          <th className="px-2 lg:px-6 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[160px] pl-[2px] pr-2 lg:px-0 bg-transparent">Jantina</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[160px] pl-[2px] pr-2 lg:px-0 bg-transparent">Jantina</th>
         </tr>
       );
     }
 
     if (activeTabId === 'asnaf_yatim') {
       return (
-        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs lg:text-sm uppercase tracking-wider`}>
-          <th className="px-1 lg:px-4 py-4 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
-          <th className="px-2 lg:px-6 py-4 font-black text-left sticky lg:static left-0 lg:left-auto bg-violet-600 z-20 w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
+        <tr className={`${themeTableHead} text-white text-[11px] lg:text-sm uppercase tracking-[0.1em]`}>
+          <th className="px-1 lg:px-4 py-5 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-left sticky lg:static left-0 lg:left-auto bg-violet-600 z-20 w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
             <div className="w-full whitespace-normal break-words leading-tight">Nama Murid</div>
           </th>
-          <th className="px-2 lg:px-6 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px] bg-transparent">
+          <th className="px-2 lg:px-6 py-5 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px] bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Kelas</div>
           </th>
-          <th className="px-2 lg:px-6 py-4 font-black text-center w-28 xs:w-32 sm:w-40 lg:w-[250px] bg-transparent">Catatan</th>
-          <th className="px-2 lg:px-6 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px] bg-transparent">Jantina</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center w-28 xs:w-32 sm:w-40 lg:w-[250px] bg-transparent">Catatan</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px] bg-transparent">Jantina</th>
         </tr>
       );
     }

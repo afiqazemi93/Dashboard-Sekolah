@@ -288,19 +288,19 @@ export function PpkiPemulihanView({
   const renderTableHeader = () => {
     if (activeTab === "ppki") {
       return (
-        <tr className="bg-blue-600 text-white text-sm uppercase tracking-widest border-b border-blue-700">
-          <th className="px-2 py-4 font-black w-12 min-w-[48px] text-center bg-blue-600">
+        <tr className="bg-blue-600 text-white text-[11px] lg:text-sm uppercase tracking-[0.1em] border-b border-blue-700">
+          <th className="px-1 lg:px-4 py-5 font-black w-8 lg:w-16 text-center bg-blue-600">
             Bil.
           </th>
-          <th className="px-6 py-4 font-black sticky lg:static left-0 lg:left-auto bg-blue-600 z-20 border-r border-blue-700 lg:border-r-0 min-w-[180px] max-w-[280px]">
+          <th className="px-2 lg:px-6 py-5 font-black sticky lg:static left-0 lg:left-auto bg-blue-600 z-20 border-r border-blue-700 lg:border-r-0 min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
             Nama Penuh
           </th>
-          <th className="px-6 py-4 font-black">Jantina</th>
-          <th className="px-6 py-4 font-black">Umur</th>
-          <th className="px-6 py-4 font-black">Bangsa/Agama</th>
-          <th className="px-6 py-4 font-black">Kelas/Tahun</th>
-          <th className="px-6 py-4 font-black">Kategori/Ketidakupayaan</th>
-          <th className="px-6 py-4 font-black">Tarikh Daftar</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center">Jantina</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center">Umur</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center">Bangsa/Agama</th>
+          <th className="px-2 lg:px-6 py-5 font-black text-center">Kelas/Tahun</th>
+          <th className="px-2 lg:px-6 py-5 font-black">Kategori/Ketidakupayaan</th>
+          <th className="px-2 lg:px-6 py-5 font-black">Tarikh Daftar</th>
         </tr>
       );
     }
@@ -322,18 +322,24 @@ export function PpkiPemulihanView({
     }
 
     return (
-      <tr className="bg-emerald-600 text-white text-sm uppercase tracking-widest border-b border-emerald-700">
-        <th className="px-2 py-4 font-black w-12 min-w-[48px] text-center bg-emerald-600">
+      <tr className="bg-emerald-600 text-white text-[11px] lg:text-sm uppercase tracking-[0.1em] border-b border-emerald-700">
+        <th className="px-1 lg:px-4 py-5 font-black w-8 lg:w-16 text-center bg-emerald-600">
           Bil.
         </th>
-        {keys.map((k, i) => (
-          <th
-            key={i}
-            className={`px-6 py-4 font-black ${i === 0 ? "sticky lg:static left-0 lg:left-auto bg-emerald-600 z-20 lg:z-auto border-r border-emerald-700 lg:border-r-0 min-w-[180px] max-w-[280px]" : ""}`}
-          >
-            {k}
-          </th>
-        ))}
+        {keys.map((k, i) => {
+          let alignClass = "text-left";
+          if (k.toUpperCase().includes("JANTINA") || k.toUpperCase().includes("PROGRAM")) {
+            alignClass = "text-center";
+          }
+          return (
+            <th
+              key={i}
+              className={`px-2 lg:px-6 py-5 font-black ${alignClass} ${i === 0 ? "sticky lg:static left-0 lg:left-auto bg-emerald-600 z-20 lg:z-auto border-r border-emerald-700 lg:border-r-0 min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none" : ""}`}
+            >
+              {k}
+            </th>
+          );
+        })}
       </tr>
     );
   };
@@ -383,6 +389,15 @@ export function PpkiPemulihanView({
         activeTab === "pemulihan"
           ? (currentPage - 1) * itemsPerPage + idx
           : idx;
+          
+      const renderJantinaBadge = (j: string) => {
+        const isLaki = j?.trim().toUpperCase().startsWith('L');
+        const isPerem = j?.trim().toUpperCase().startsWith('P');
+        if (isLaki) return <span className="inline-block px-2 lg:px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j}</span>;
+        if (isPerem) return <span className="inline-block px-2 lg:px-3 py-1 bg-pink-50 text-pink-700 border border-pink-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j}</span>;
+        return <span className="inline-block px-2 lg:px-3 py-1 bg-slate-50 text-slate-700 border border-slate-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j || '-'}</span>;
+      };
+
       if (activeTab === "ppki") {
         const nama = getKey(item, ["NAMA", "NAMA PENUH"]);
         const jantina = getKey(item, ["JANTINA"]);
@@ -399,46 +414,46 @@ export function PpkiPemulihanView({
             key={idx}
             className="hover:bg-slate-50 transition-colors border-b border-slate-50 group"
           >
-            <td className="px-2 py-4 font-black text-slate-400 text-[11px] text-center w-12 min-w-[48px]">
+            <td className="w-8 lg:w-16 px-1 lg:px-4 py-4 text-center font-black text-slate-400 text-[11px] lg:text-sm">
               {idx + 1}
             </td>
             <td
-              className="px-6 py-4 font-bold text-slate-800 text-[11px] uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none min-w-[180px] max-w-[280px]"
+              className="px-2 lg:px-6 py-4 font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none"
               title={nama as string}
             >
               <div className="whitespace-normal break-words leading-tight">
                 {nama}
               </div>
             </td>
-            <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-              {jantina}
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] sm:text-xs lg:text-sm font-bold text-slate-600 uppercase">
+              <div className="w-full flex justify-center">{renderJantinaBadge(jantina as string)}</div>
             </td>
-            <td className="px-6 py-4 text-[11px] font-bold text-slate-600">
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] sm:text-xs lg:text-sm font-bold text-slate-600">
               {umur}
             </td>
-            <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
-              <div className="flex flex-col">
+            <td className="px-2 lg:px-6 py-4 text-[11px] sm:text-xs lg:text-sm font-bold text-slate-600 uppercase text-center">
+              <div className="flex flex-col items-center">
                 <span>{bangsa}</span>
                 <span className="text-[10px] text-slate-400">{agama}</span>
               </div>
             </td>
-            <td className="px-6 py-4 text-[11px] font-bold text-blue-600 uppercase">
+            <td className="px-2 lg:px-6 py-4 text-[11px] sm:text-xs lg:text-sm font-bold text-blue-600 uppercase text-center">
               {kelas}
             </td>
-            <td className="px-6 py-4 text-[11px] font-bold text-slate-600 uppercase">
+            <td className="px-2 lg:px-6 py-4 text-[11px] sm:text-xs lg:text-sm font-bold text-slate-600 uppercase">
               <div className="flex flex-col gap-1">
-                <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] rounded-lg border border-blue-100 max-w-max">
+                <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[9px] lg:text-[11px] rounded-lg border border-blue-100 max-w-max">
                   {kategori}
                 </span>
                 <span
-                  className="inline-block px-2 py-0.5 bg-amber-50 text-amber-600 text-[9px] rounded-lg border border-amber-100 max-w-max line-clamp-1"
+                  className="inline-block px-2 py-0.5 text-[9px] lg:text-[11px] rounded-lg border max-w-max line-clamp-1 bg-violet-50 text-violet-700 border-violet-100"
                   title={ketidakupayaan as string}
                 >
                   {ketidakupayaan}
                 </span>
               </div>
             </td>
-            <td className="px-6 py-4 text-[11px] font-medium text-slate-500">
+            <td className="px-2 lg:px-6 py-4 text-[11px] sm:text-xs lg:text-sm font-medium text-slate-500">
               {tarikh}
             </td>
           </tr>
@@ -451,7 +466,7 @@ export function PpkiPemulihanView({
           key={idx}
           className="hover:bg-slate-50 transition-colors border-b border-slate-50 group"
         >
-          <td className="px-2 py-4 font-black text-slate-400 text-[11px] text-center w-12 min-w-[48px]">
+          <td className="w-8 lg:w-16 px-1 lg:px-4 py-4 text-center font-black text-slate-400 text-[11px] lg:text-sm">
             {actualIdx + 1}
           </td>
           {fallbackKeys.map((keyString, i) => {
@@ -461,22 +476,39 @@ export function PpkiPemulihanView({
                 (k) =>
                   k.trim().toUpperCase() === keyString.trim().toUpperCase(),
               ) || keyString;
+              
+            const val = String(item[matchingItemKey] || "-");
+            let alignClass = "text-left";
+            let content: React.ReactNode = val;
+
+            if (keyString.toUpperCase().includes("JANTINA")) {
+               alignClass = "text-center";
+               content = <div className="w-full flex justify-center">{renderJantinaBadge(val)}</div>;
+            } else if (keyString.toUpperCase().includes("PROGRAM")) {
+               alignClass = "text-center";
+               content = (
+                 <span className="inline-block px-2 lg:px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">
+                   {val}
+                 </span>
+               );
+            }
+
             return (
               <td
                 key={i}
-                className={`px-6 py-4 text-[11px] font-bold text-slate-700 ${
+                className={`px-2 lg:px-6 py-4 text-[11px] sm:text-xs lg:text-sm font-bold text-slate-700 ${alignClass} ${
                   i === 0
-                    ? "uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none min-w-[180px] max-w-[280px]"
+                    ? "uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none"
                     : ""
                 }`}
-                title={String(item[matchingItemKey] || "-")}
+                title={val}
               >
                 {i === 0 ? (
                   <div className="whitespace-normal break-words leading-tight">
-                    {String(item[matchingItemKey] || "-")}
+                    {val}
                   </div>
                 ) : (
-                  String(item[matchingItemKey] || "-")
+                  content
                 )}
               </td>
             );
