@@ -492,7 +492,6 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
             <h2 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-950 tracking-tight mb-3 uppercase leading-none select-none">{details.name}</h2>
             <div className="flex justify-center md:justify-start mt-1">
               <div className="inline-flex items-center gap-2.5 px-4 py-2 bg-gradient-to-r from-slate-800 to-slate-900 rounded-xl text-white text-[10px] sm:text-xs font-black tracking-widest uppercase shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-700">
-                <Award className="w-4 h-4 text-yellow-400" />
                 <span>{details.motto}</span>
               </div>
             </div>
@@ -626,7 +625,7 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
       <div className="bg-white rounded-[24px] p-6 lg:p-7 shadow-[0_4px_24px_rgba(0,0,0,0.03)] border border-gray-100/80 text-left mt-5">
         <h3 className="font-extrabold text-gray-950 text-xl mb-6 flex items-center space-x-2.5 tracking-tight border-b border-gray-50 pb-4">
           <span className="w-1.5 h-6 bg-blue-600 rounded-full"></span>
-          <span>Pautan Luar & Sistem</span>
+          <span>Pautan Luar</span>
         </h3>
         
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">

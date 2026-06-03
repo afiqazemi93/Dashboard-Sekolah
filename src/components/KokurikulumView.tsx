@@ -300,13 +300,13 @@ export function KokurikulumView({
   return (
     <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
         <div className="flex items-center space-x-4">
-          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">
+          <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
             <Trophy className="w-6 h-6" />
           </div>
-          <div>
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+          <div className="text-left">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               Pencapaian Kokurikulum
             </h2>
           </div>
@@ -329,22 +329,22 @@ export function KokurikulumView({
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 max-w-full lg:max-w-max">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="flex bg-white rounded-xl shadow-sm border border-slate-200/60 p-1 shrink-0 overflow-x-auto hide-scrollbar">
           {TABS.map((tab) => {
             const isSelected = activeTab === tab.id;
             return (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex-1 sm:flex-none px-4 sm:px-6 py-3 flex items-center justify-center gap-2 font-semibold text-[10px] sm:text-xs uppercase tracking-widest rounded-xl transition-all ${
+                className={`flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${
                   isSelected
-                    ? "bg-[#bc1437] text-white shadow-md shadow-[#bc1437]/10 scale-100 font-extrabold"
-                    : "text-slate-600 hover:bg-slate-200/50 hover:text-slate-900 border border-transparent"
+                    ? "bg-[#bc1437] text-white shadow-md shadow-[#bc1437]/10"
+                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                 }`}
               >
-                <tab.icon className="w-4 h-4 shrink-0" />
-                <span className="truncate">{tab.title}</span>
+                <tab.icon className={`w-4 h-4 shrink-0 ${isSelected ? "text-white" : "text-slate-400"}`} />
+                {tab.title}
               </button>
             );
           })}

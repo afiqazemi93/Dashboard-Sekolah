@@ -465,12 +465,9 @@ export function KurikulumView({
                 <BookOpen className="w-7 h-7 text-white" />
               </div>
 
-              <h4 className="text-lg font-black text-slate-800 mb-1 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">
+              <h4 className="text-lg font-black text-slate-800 mb-6 leading-tight group-hover:text-blue-600 transition-colors uppercase tracking-tight">
                 {p.name}
               </h4>
-              <p className="text-xs font-bold text-slate-400 mb-6 uppercase tracking-widest">
-                {p.slug}
-              </p>
 
               <div className="space-y-4 mb-6">
                 {(
@@ -601,10 +598,9 @@ export function KurikulumView({
           animate={{ opacity: 1, y: 0 }}
           className="bg-white rounded-[3rem] overflow-hidden border border-slate-100 shadow-xl shadow-slate-200/20"
         >
-          <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div></div>
-
-            {isAdmin && (
+          {isAdmin && (
+            <div className="p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div></div>
               <label className="flex items-center justify-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-widest transition-all cursor-pointer">
                 <input
                   type="file"
@@ -615,18 +611,18 @@ export function KurikulumView({
                 <ImagePlus className="w-4 h-4" />
                 Tukar Banner
               </label>
-            )}
-          </div>
+            </div>
+          )}
 
-          <div className="relative group bg-slate-50 min-h-[300px] flex items-center justify-center p-4">
+          <div className="relative group bg-slate-50 min-h-[auto] sm:min-h-[400px] flex items-center justify-center p-0 sm:p-4">
             {banner ? (
               <div
-                className="relative w-full max-w-4xl group-hover:shadow-2xl group-hover:scale-[1.01] transition-all duration-300 rounded-3xl overflow-hidden shadow-lg border border-slate-100"
+                className="relative w-full max-w-5xl group-hover:shadow-2xl group-hover:scale-[1.01] transition-all duration-300 sm:rounded-3xl overflow-hidden sm:shadow-lg sm:border border-slate-100"
               >
                 <img
                   src={banner}
                   alt="Banner UASA & PBD"
-                  className="w-full h-auto object-contain max-h-[600px]"
+                  className="w-full h-auto object-contain max-h-[800px]"
                 />
               </div>
             ) : (

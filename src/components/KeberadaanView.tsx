@@ -231,14 +231,14 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       </div>
 
       {/* Sub Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 max-w-max">
+      <div className="flex justify-center sm:justify-start mb-6 w-full">
+        <div className="flex bg-white sm:bg-slate-100/50 rounded-2xl border border-slate-200/60 sm:border-slate-100 p-1.5 shrink-0 overflow-x-auto hide-scrollbar shadow-sm sm:shadow-none w-full sm:w-auto max-w-max">
           <button 
             onClick={() => setActiveSubTab('senarai')}
-            className={`px-6 py-3 font-semibold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 font-bold sm:font-semibold text-[11px] sm:text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
               activeSubTab === 'senarai' 
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 scale-100 font-extrabold' 
-                : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+                : 'text-slate-500 sm:text-slate-600 hover:bg-slate-50 sm:hover:bg-slate-200/50 hover:text-slate-900'
             }`}
           >
             <LayoutList className="w-4 h-4" />
@@ -246,10 +246,10 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
           </button>
           <button 
             onClick={() => setActiveSubTab('analitik')}
-            className={`px-6 py-3 font-semibold text-xs uppercase tracking-widest rounded-xl transition-all flex items-center gap-2 ${
+            className={`flex-1 sm:flex-none px-4 sm:px-6 py-2.5 sm:py-3 font-bold sm:font-semibold text-[11px] sm:text-xs uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap ${
               activeSubTab === 'analitik' 
                 ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/10 scale-100 font-extrabold' 
-                : 'text-slate-600 hover:bg-slate-200/50 hover:text-slate-900'
+                : 'text-slate-500 sm:text-slate-600 hover:bg-slate-50 sm:hover:bg-slate-200/50 hover:text-slate-900'
             }`}
           >
             <PieChart className="w-4 h-4" />

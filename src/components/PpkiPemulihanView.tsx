@@ -489,8 +489,8 @@ export function PpkiPemulihanView({
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-300">
       {/* Sub Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-        <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 max-w-max">
+      <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 mb-4">
+        <div className="flex flex-wrap justify-center sm:justify-start gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 w-full sm:w-auto sm:max-w-max">
           <button
             onClick={() => setActiveTab("ppki")}
             className={`px-6 py-3 font-semibold text-xs uppercase tracking-widest rounded-xl transition-all ${

@@ -311,31 +311,31 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
   const renderTableHead = () => {
     if (activeTabId === 'rmt_pss') {
       return (
-        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs uppercase tracking-wider`}>
-          <th className="px-1 py-4 font-black w-8 text-center bg-transparent">Bil.</th>
-          <th className="px-2 py-4 font-black text-left w-auto bg-transparent">
+        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs lg:text-sm uppercase tracking-wider`}>
+          <th className="px-1 lg:px-4 py-4 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
+          <th className="px-2 lg:px-6 py-4 font-black text-left w-auto bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Nama Murid</div>
           </th>
-          <th className="px-2 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px] bg-transparent">
+          <th className="px-2 lg:px-6 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[200px] bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Kelas</div>
           </th>
-          <th className="px-2 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[120px] pl-[2px] pr-2 lg:px-0 bg-transparent">Jantina</th>
+          <th className="px-2 lg:px-6 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[160px] pl-[2px] pr-2 lg:px-0 bg-transparent">Jantina</th>
         </tr>
       );
     }
 
     if (activeTabId === 'asnaf_yatim') {
       return (
-        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs uppercase tracking-wider`}>
-          <th className="px-1 py-4 font-black w-8 text-center bg-transparent">Bil.</th>
-          <th className="px-2 py-4 font-black text-left sticky lg:static left-0 lg:left-auto bg-violet-600 z-20 w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-0 max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
+        <tr className={`${themeTableHead} text-white text-[10px] md:text-xs lg:text-sm uppercase tracking-wider`}>
+          <th className="px-1 lg:px-4 py-4 font-black w-8 lg:w-16 text-center bg-transparent">Bil.</th>
+          <th className="px-2 lg:px-6 py-4 font-black text-left sticky lg:static left-0 lg:left-auto bg-violet-600 z-20 w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
             <div className="w-full whitespace-normal break-words leading-tight">Nama Murid</div>
           </th>
-          <th className="px-2 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[140px] bg-transparent">
+          <th className="px-2 lg:px-6 py-4 font-black text-center w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px] bg-transparent">
             <div className="w-full whitespace-normal break-words leading-tight">Kelas</div>
           </th>
-          <th className="px-2 py-4 font-black text-center w-28 xs:w-32 sm:w-40 lg:w-full bg-transparent">Catatan</th>
-          <th className="px-2 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px] bg-transparent">Jantina</th>
+          <th className="px-2 lg:px-6 py-4 font-black text-center w-28 xs:w-32 sm:w-40 lg:w-[250px] bg-transparent">Catatan</th>
+          <th className="px-2 lg:px-6 py-3 font-black text-center w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px] bg-transparent">Jantina</th>
         </tr>
       );
     }
@@ -397,6 +397,14 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
     return paginatedData.map((item, idx) => {
       const realIndex = (currentPage - 1) * itemsPerPage + idx + 1;
       
+      const renderJantinaBadge = (j: string) => {
+        const isLaki = j.trim().toUpperCase().startsWith('L');
+        const isPerem = j.trim().toUpperCase().startsWith('P');
+        if (isLaki) return <span className="inline-block px-2 lg:px-3 py-1 bg-blue-50 text-blue-700 border border-blue-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j}</span>;
+        if (isPerem) return <span className="inline-block px-2 lg:px-3 py-1 bg-pink-50 text-pink-700 border border-pink-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j}</span>;
+        return <span className="inline-block px-2 lg:px-3 py-1 bg-slate-50 text-slate-700 border border-slate-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">{j || '-'}</span>;
+      };
+
       if (activeTabId === 'rmt_pss') {
         const nama = String(getValueByKey(item, ['NAMA MURID', 'NAMA', 'NAME'])).toUpperCase();
         const kelas = String(getValueByKey(item, ['KELAS', 'CLASS'])).toUpperCase();
@@ -404,21 +412,21 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
 
         return (
           <tr key={idx} className={`hover:bg-slate-50 transition-colors border-b ${themeRowBorder} group`}>
-            <td className="w-8 px-1 py-4 text-center font-black text-slate-400 text-[11px]">
+            <td className="w-8 lg:w-16 px-1 lg:px-4 py-4 text-center font-black text-slate-400 text-[11px] lg:text-sm">
               {realIndex}
             </td>
-            <td className="px-2 py-4 font-bold text-slate-800 text-[11px] sm:text-xs leading-snug uppercase w-auto min-w-0">
+            <td className="px-2 lg:px-6 py-4 font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm leading-snug uppercase w-auto min-w-0">
               <div className="w-full whitespace-normal break-words leading-tight" title={nama}>
                 {nama || '-'}
               </div>
             </td>
-            <td className="px-2 py-4 text-center text-[11px] font-bold text-indigo-600 uppercase w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px]">
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] lg:text-sm font-bold text-indigo-600 uppercase w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[200px]">
               <div className="w-full whitespace-normal break-words leading-tight" title={kelas}>
                 {kelas || '-'}
               </div>
             </td>
-            <td className="px-2 py-4 text-center text-[11px] font-bold text-slate-600 uppercase w-[55px] xs:w-[65px] sm:w-24 lg:w-[120px] pl-[2px] pr-2 lg:px-0">
-              <div className="w-full truncate">{jantina || '-'}</div>
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] lg:text-sm font-bold text-slate-600 uppercase w-[55px] xs:w-[65px] sm:w-24 lg:w-[160px] pl-[2px] pr-2 lg:px-0">
+              <div className="w-full flex justify-center">{renderJantinaBadge(jantina)}</div>
             </td>
           </tr>
         );
@@ -432,21 +440,21 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
 
         return (
           <tr key={idx} className={`hover:bg-slate-50 transition-colors border-b ${themeRowBorder} group`}>
-            <td className="w-8 px-1 py-4 text-center font-black text-slate-400 text-[11px]">
+            <td className="w-8 lg:w-16 px-1 lg:px-4 py-4 text-center font-black text-slate-400 text-[11px] lg:text-sm">
               {realIndex}
             </td>
-            <td className="px-2 py-4 font-bold text-slate-800 text-[11px] sm:text-xs leading-snug uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-0 max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
+            <td className="px-2 lg:px-6 py-4 font-bold text-slate-800 text-[11px] sm:text-xs lg:text-sm leading-snug uppercase sticky lg:static left-0 lg:left-auto bg-white group-hover:bg-slate-50 z-10 lg:z-auto border-r border-slate-100 lg:border-r-0 shadow-[2px_0_5px_rgba(0,0,0,0.02)] lg:shadow-none w-[140px] xs:w-[170px] sm:w-[220px] md:w-[260px] lg:w-auto min-w-[140px] xs:min-w-[170px] sm:min-w-[220px] md:min-w-[260px] lg:min-w-[300px] max-w-[140px] xs:max-w-[170px] sm:max-w-[220px] md:max-w-[260px] lg:max-w-none">
               <div className="w-full whitespace-normal break-words leading-tight" title={nama}>
                 {nama || '-'}
               </div>
             </td>
-            <td className="px-2 py-4 text-center text-[11px] font-bold text-indigo-600 uppercase w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[140px]">
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] lg:text-sm font-bold text-indigo-600 uppercase w-[65px] xs:w-[75px] sm:w-[120px] lg:w-[180px]">
               <div className="w-full whitespace-normal break-words leading-tight" title={kelas}>
                 {kelas || '-'}
               </div>
             </td>
-            <td className="px-2 py-4 text-center text-[11px] font-semibold text-slate-600 leading-snug w-28 xs:w-32 sm:w-40 lg:w-full">
-              <span className={`inline-block px-1.5 py-0.5 text-[9px] rounded-lg border font-bold whitespace-normal sm:whitespace-nowrap ${
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] lg:text-sm font-semibold text-slate-600 leading-snug w-28 xs:w-32 sm:w-40 lg:w-[250px]">
+              <span className={`inline-block px-1.5 lg:px-3 py-0.5 lg:py-1 text-[9px] lg:text-[11px] rounded-lg border font-bold whitespace-normal sm:whitespace-nowrap ${
                 catatan.includes('YATIM') ? 'bg-amber-50 text-amber-700 border-amber-100' :
                 catatan.includes('ASNAF') ? 'bg-violet-50 text-violet-700 border-violet-100' :
                 'bg-rose-50 text-rose-700 border-rose-100'
@@ -454,7 +462,9 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
                 {catatan || '-'}
               </span>
             </td>
-            <td className="px-2 py-4 text-center text-[11px] font-bold text-slate-600 uppercase w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px]">{jantina || '-'}</td>
+            <td className="px-2 lg:px-6 py-4 text-center text-[11px] lg:text-sm font-bold text-slate-600 uppercase w-[55px] xs:w-[65px] sm:w-24 lg:w-[140px]">
+              <div className="w-full flex justify-center">{renderJantinaBadge(jantina)}</div>
+            </td>
           </tr>
         );
       }
@@ -532,7 +542,7 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
 
       {/* Welfare Tabs selection */}
       {tabsList.length > 1 && (
-        <div className="flex flex-wrap gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 max-w-max">
+        <div className="flex flex-wrap justify-center sm:justify-start gap-2.5 p-1.5 bg-slate-100/50 rounded-2xl border border-slate-100 w-full sm:w-auto sm:max-w-max">
           {tabsList.map(tab => {
             const isSelected = activeTabId === tab.id;
             const tabBtnBg = isSelected

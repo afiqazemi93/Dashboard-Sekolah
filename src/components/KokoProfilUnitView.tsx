@@ -58,13 +58,13 @@ export function KokoProfilUnitView({ details, isAdmin, onSave }: Props) {
   return (
     <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between items-center sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
           <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm">
+            <div className="w-12 h-12 bg-indigo-50 border border-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center shadow-sm shrink-0">
               <Users className="w-6 h-6" />
             </div>
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            <div className="text-left">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 Profil Unit Kokurikulum
               </h2>
             </div>
@@ -106,11 +106,11 @@ export function KokoProfilUnitView({ details, isAdmin, onSave }: Props) {
                   className={clsx(
                     "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
                     isCatActive 
-                      ? "bg-slate-100 text-slate-900 shadow-sm" 
+                      ? "bg-[#bc1437] text-white shadow-md shadow-[#bc1437]/10" 
                       : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                   )}
                 >
-                  <Icon className={clsx("w-4 h-4", isCatActive ? "text-indigo-600" : "text-slate-400")} />
+                  <Icon className={clsx("w-4 h-4", isCatActive ? "text-white" : "text-slate-400")} />
                   {cat}
                 </button>
               );
