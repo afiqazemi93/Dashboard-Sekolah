@@ -174,7 +174,18 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
       if (c > maxYearCount) { maxYearCount = c; maxYear = y; }
     });
 
-    const ratio = femaleCount > 0 ? (maleCount / femaleCount).toFixed(1) : maleCount > 0 ? '1:0' : '0:0';
+    let ratio = '0:0';
+    if (femaleCount > 0 && maleCount > 0) {
+      if (maleCount >= femaleCount) {
+        ratio = `${(maleCount / femaleCount).toFixed(1)} : 1`;
+      } else {
+        ratio = `1 : ${(femaleCount / maleCount).toFixed(1)}`;
+      }
+    } else if (maleCount > 0) {
+      ratio = '1 : 0';
+    } else if (femaleCount > 0) {
+      ratio = '0 : 1';
+    }
 
     // Added specific counts for requested categories
     const muridAliranPerdanaCount = normalizedStudents.filter(s => 
