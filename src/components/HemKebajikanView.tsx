@@ -584,7 +584,7 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
               <h4 className="text-6xl font-black text-white">{analytics.total}</h4>
             </div>
             
-            <div className="flex gap-8 items-center bg-black/10 px-8 py-6 rounded-3xl backdrop-blur-sm z-10 w-full md:w-auto justify-center">
+            <div className="flex flex-wrap gap-4 sm:gap-8 items-center bg-black/10 px-6 sm:px-8 py-5 sm:py-6 rounded-3xl backdrop-blur-sm z-10 w-full md:w-auto justify-center">
               <div className="text-center">
                 <h5 className="text-3xl font-black text-white">{analytics.lelaki}</h5>
                 <p className="text-[10px] font-black text-white/80 uppercase tracking-widest mt-2 flex items-center justify-center gap-1">

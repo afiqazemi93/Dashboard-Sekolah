@@ -94,7 +94,7 @@ export function KokoProfilUnitView({ details, isAdmin, onSave }: Props) {
         </div>
 
         {/* Tab & Search */}
-        <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-4 mb-6">
           <div className="flex bg-white rounded-xl shadow-sm border border-slate-200/60 p-1 shrink-0 overflow-x-auto hide-scrollbar">
             {CATEGORIES.map(cat => {
               const Icon = CategoryIcons[cat];
@@ -104,20 +104,20 @@ export function KokoProfilUnitView({ details, isAdmin, onSave }: Props) {
                   key={cat}
                   onClick={() => setActiveCategory(cat)}
                   className={clsx(
-                    "flex items-center gap-2.5 px-4 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap",
+                    "flex items-center justify-center lg:justify-start gap-2 px-3 py-2.5 rounded-lg text-xs md:text-sm font-bold transition-all whitespace-nowrap shrink-0",
                     isCatActive 
                       ? "bg-[#bc1437] text-white shadow-md shadow-[#bc1437]/10" 
                       : "text-slate-500 hover:text-slate-700 hover:bg-slate-50"
                   )}
                 >
-                  <Icon className={clsx("w-4 h-4", isCatActive ? "text-white" : "text-slate-400")} />
+                  <Icon className={clsx("w-3.5 h-3.5 md:w-4 md:h-4 shrink-0", isCatActive ? "text-white" : "text-slate-400")} />
                   {cat}
                 </button>
               );
             })}
           </div>
 
-          <div className="relative flex-1 group">
+          <div className="relative w-full lg:flex-1 group">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
             <input
               type="text"

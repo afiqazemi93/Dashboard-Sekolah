@@ -328,7 +328,7 @@ export function PpkiPemulihanView({
         </th>
         {keys.map((k, i) => {
           let alignClass = "text-left";
-          if (k.toUpperCase().includes("JANTINA") || k.toUpperCase().includes("PROGRAM")) {
+          if (k.toUpperCase().includes("JANTINA") || k.toUpperCase().includes("PROGRAM") || k.toUpperCase().includes("KELAS")) {
             alignClass = "text-center";
           }
           return (
@@ -486,11 +486,22 @@ export function PpkiPemulihanView({
                content = <div className="w-full flex justify-center">{renderJantinaBadge(val)}</div>;
             } else if (keyString.toUpperCase().includes("PROGRAM")) {
                alignClass = "text-center";
+               let badgeColor = "bg-emerald-50 text-emerald-700 border-emerald-100";
+               const upperVal = val.toUpperCase();
+               if (upperVal.includes("LITERASI") && (upperVal.includes("&") || upperVal.includes("DAN") || upperVal.includes("NUMERASI"))) {
+                 badgeColor = "bg-purple-50 text-purple-700 border-purple-100";
+               } else if (upperVal.includes("LITERASI")) {
+                 badgeColor = "bg-orange-50 text-orange-700 border-orange-100";
+               } else if (upperVal.includes("NUMERASI")) {
+                 badgeColor = "bg-cyan-50 text-cyan-700 border-cyan-100";
+               }
                content = (
-                 <span className="inline-block px-2 lg:px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none">
+                 <span className={`inline-block px-2 lg:px-3 py-1 ${badgeColor} border rounded-lg text-[10px] sm:text-[11px] lg:text-xs font-bold leading-none`}>
                    {val}
                  </span>
                );
+            } else if (keyString.toUpperCase().includes("KELAS") || keyString.toUpperCase().includes("TAHUN")) {
+               alignClass = "text-center";
             }
 
             return (
@@ -804,7 +815,7 @@ export function PpkiPemulihanView({
               </h4>
             </div>
 
-            <div className="flex gap-8 items-center bg-black/10 px-8 py-6 rounded-3xl backdrop-blur-sm z-10 w-full md:w-auto justify-center">
+            <div className="flex flex-wrap gap-4 sm:gap-8 items-center bg-black/10 px-6 sm:px-8 py-5 sm:py-6 rounded-3xl backdrop-blur-sm z-10 w-full md:w-auto justify-center">
               <div className="text-center">
                 <h5 className="text-3xl font-black text-white">
                   {analytics.lelaki}
