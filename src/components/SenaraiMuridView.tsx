@@ -579,7 +579,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
 
   return (
-    <div className="w-full max-w-7xl mx-auto pb-16 space-y-6 animate-in fade-in duration-500">
+    <div className="w-full pb-16 space-y-6 animate-in fade-in duration-500">
       {/* 1. Header Hero */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
         <div className="flex items-center space-x-4">

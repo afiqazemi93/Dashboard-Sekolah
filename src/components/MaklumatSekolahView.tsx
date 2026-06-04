@@ -450,7 +450,7 @@ export function MaklumatSekolahView({ details, isAdmin, onSave }: MaklumatSekola
   }
 
   return (
-    <div className="space-y-6 pt-0 w-full pb-12 max-w-7xl mx-auto">
+    <div className="space-y-6 pt-0 w-full pb-12">
       
       {/* 1. KAD HEADER (BANNER DENGAN ALAMAT, TELEFON, EMEL, FB, VISI & MISI DAN MOTTO) */}
       <div className="relative rounded-[24px] overflow-hidden bg-white border border-gray-100 shadow-[0_12px_40px_rgba(0,0,0,0.03)] p-6 sm:p-8 transition-all hover:shadow-[0_16px_48px_rgba(0,0,0,0.05)] isolate">

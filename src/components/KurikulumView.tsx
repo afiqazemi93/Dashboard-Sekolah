@@ -136,22 +136,6 @@ export function KurikulumView({
     });
   }, [kurikulumData.panitiaList, searchQuery, filterType]);
 
-  const stats = useMemo(() => {
-    const active = kurikulumData.panitiaList.filter((p) => !p.isArchived);
-    const totalMembers = active.reduce((acc, p) => acc + p.members.length, 0);
-    const ketuaCount = active.reduce(
-      (acc, p) =>
-        acc + p.members.filter((m) => m.role === "Ketua Panitia").length,
-      0,
-    );
-
-    return {
-      totalPanitia: active.length,
-      totalMembers,
-      ketuaCount,
-    };
-  }, [kurikulumData.panitiaList]);
-
   const handleSavePanitia = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
@@ -311,89 +295,6 @@ export function KurikulumView({
 
   const renderPanitiaTab = () => (
     <div className="space-y-8">
-      {/* Analytics Rows */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[20px] p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-center text-white group"
-        >
-          <div className="flex items-center space-x-4 relative z-10 w-full">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center shrink-0 shadow-sm backdrop-blur-md">
-              <LayoutGrid className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col justify-center text-left">
-              <h4 className="text-white/90 text-[14px] font-bold mb-0.5">
-                Jumlah Panitia
-              </h4>
-              <div className="text-3xl font-black text-white tracking-tight leading-none mb-1">
-                {stats.totalPanitia}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold bg-white/20 w-fit px-2.5 py-1 rounded-full backdrop-blur-md text-white font-sans uppercase">
-                <TrendingUp className="w-3 h-3" />
-                <span>AKTIF</span>
-              </div>
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-[20px] p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-center text-white group"
-        >
-          <div className="flex items-center space-x-4 relative z-10 w-full">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center shrink-0 shadow-sm backdrop-blur-md">
-              <UserCheck className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col justify-center text-left">
-              <h4 className="text-white/90 text-[14px] font-bold mb-0.5">
-                Jumlah Ketua Panitia
-              </h4>
-              <div className="text-3xl font-black text-white tracking-tight leading-none mb-1">
-                {stats.ketuaCount}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold bg-white/20 w-fit px-2.5 py-1 rounded-full backdrop-blur-md text-white font-sans uppercase">
-                <Users className="w-3 h-3" />
-                <span>DILANTIK</span>
-              </div>
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
-        </motion.div>
-
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-gradient-to-br from-purple-500 to-pink-600 rounded-[20px] p-5 shadow-sm hover:shadow-md transition-all relative overflow-hidden flex flex-col justify-center text-white group"
-        >
-          <div className="flex items-center space-x-4 relative z-10 w-full">
-            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center shrink-0 shadow-sm backdrop-blur-md">
-              <Users className="w-6 h-6 text-white" />
-            </div>
-            <div className="flex flex-col justify-center text-left">
-              <h4 className="text-white/90 text-[14px] font-bold mb-0.5">
-                Jumlah Guru Panitia
-              </h4>
-              <div className="text-3xl font-black text-white tracking-tight leading-none mb-1">
-                {stats.totalMembers}
-              </div>
-              <div className="mt-1 flex items-center gap-1.5 text-[10px] font-bold bg-white/20 w-fit px-2.5 py-1 rounded-full backdrop-blur-md text-white font-sans uppercase">
-                <TrendingUp className="w-3 h-3" />
-                <span>BERDAFTAR</span>
-              </div>
-            </div>
-          </div>
-          <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 pointer-events-none" />
-          <div className="absolute top-0 right-0 w-16 h-16 border border-white/10 rounded-full -mr-2 -mt-2 pointer-events-none" />
-        </motion.div>
-      </div>
-
       {/* Controls */}
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between bg-white/50 backdrop-blur-xl border border-white/20 p-4 rounded-3xl shadow-sm z-20">
         <div className="flex flex-1 gap-2 w-full sm:w-auto">

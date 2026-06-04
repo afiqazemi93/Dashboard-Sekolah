@@ -109,7 +109,7 @@ export function HemKehadiranView({ details, isAdmin, onSave }: HemKehadiranViewP
   }
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300 w-full">
       <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
         <div className="flex items-center space-x-4">
           <div className="w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-2xl flex items-center justify-center shadow-sm">

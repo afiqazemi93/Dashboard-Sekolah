@@ -206,7 +206,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   const peratusCemerlang = totalStaff > 0 ? Math.round((totalHadir / totalStaff) * 100) : 0;
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full">
       {/* ELEMEN BAHAGIAN ATAS */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)] mb-8">
         <div className="flex items-center space-x-4">

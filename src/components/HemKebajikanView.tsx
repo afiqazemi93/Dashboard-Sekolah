@@ -515,7 +515,7 @@ export function HemKebajikanView({ details, isAdmin, onSave }: HemKebajikanViewP
   };
 
   return (
-    <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 w-full">
       {/* Welfare Header Dashboard */}
       <div className="flex flex-col sm:flex-row gap-4 justify-between sm:items-center bg-white p-6 sm:p-8 rounded-[2rem] border border-slate-100 shadow-[0_8px_30px_rgba(0,0,0,0.02)]">
         <div className="flex items-center space-x-4">

@@ -3,7 +3,7 @@ import { UserCheck, Heart, AlertTriangle, Users } from 'lucide-react';
 
 export function HemView() {
   return (
-    <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto">
+    <div className="space-y-6 pb-12 w-full">
       {/* Title section */}
       <div className="flex items-center space-x-3 mb-6">
         <div className="w-11 h-11 bg-white border border-gray-200 text-blue-600 rounded-xl flex items-center justify-center shadow-sm">

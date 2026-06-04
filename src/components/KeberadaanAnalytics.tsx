@@ -243,7 +243,7 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
 
   if (records.length === 0) {
     return (
-      <div className="w-full max-w-7xl mx-auto pb-12 animate-in fade-in">
+      <div className="w-full pb-12 animate-in fade-in">
         <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-4 mb-8">
            <div className="h-10 bg-slate-200 rounded-lg w-64 animate-pulse"></div>
            <div className="h-10 bg-slate-200 rounded-lg w-full max-w-md animate-pulse"></div>
@@ -258,7 +258,7 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
   }
 
   return (
-    <div className="space-y-6 pb-12 w-full max-w-7xl mx-auto animate-in fade-in duration-500">
+    <div className="space-y-6 pb-12 w-full animate-in fade-in duration-500">
       
       {/* Filters Section */}
       <div className="flex flex-wrap items-center justify-center gap-2 pb-4">
