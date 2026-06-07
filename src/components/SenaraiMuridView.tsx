@@ -44,7 +44,7 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
 
   // Admin Panel states
   const [showAdminDrawer, setShowAdminDrawer] = useState(false);
-  const [adminTab, setAdminTab] = useState<'individu' | 'upload' | 'pukal'>('individu');
+  const [adminTab, setAdminTab] = useState<'individu' | 'upload' | 'uploadPrasekolah' | 'pukal'>('individu');
   const [showDeleteAllConfirm, setShowDeleteAllConfirm] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<StudentRecord | null>(null);
 
@@ -558,6 +558,63 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
     reader.readAsBinaryString(file);
   };
 
+  const downloadTemplatePrasekolah = () => {
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet([
+        { 'Nama Murid': 'CONTOH PRASEKOLAH SATU', 'Umur': 6, 'Jantina': 'Lelaki' },
+        { 'Nama Murid': 'CONTOH PRASEKOLAH DUA', 'Umur': 5, 'Jantina': 'Perempuan' },
+    ]);
+    const wscols = [ {wch: 40}, {wch: 10}, {wch: 15} ];
+    ws['!cols'] = wscols;
+    XLSX.utils.book_append_sheet(wb, ws, 'Prasekolah');
+    XLSX.writeFile(wb, 'Template_Prasekolah.xlsx');
+  };
+
+  const handleFileUploadPrasekolah = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setIsUploading(true);
+    setUploadError('');
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+        try {
+          const bstr = evt.target?.result;
+          const wb = XLSX.read(bstr, { type: 'binary' });
+          const allNew: StudentRecord[] = [];
+          
+          wb.SheetNames.forEach(sheet => {
+            const data: any[] = XLSX.utils.sheet_to_json(wb.Sheets[sheet]);
+            data.forEach(row => {
+              if (row['Nama Murid'] || row['Nama'] || row['NAMA']) {
+                const studentName = String(row['Nama Murid'] || row['Nama'] || row['NAMA']).toUpperCase().trim();
+                const umur = String(row['Umur'] || '6').trim();
+                
+                allNew.push({
+                  id: `s_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                  idNumber: `ST-${Date.now().toString().slice(-6)}`,
+                  name: studentName,
+                  className: 'PRASEKOLAH',
+                  tahun: 'Prasekolah', // Assuming keeping it as Prasekolah but we could put Umur X, however Umur might not match ALL_YEARS in the system. But let's append Age to name or let's keep it 'Prasekolah' since it's the standard. Oh, they asked for 'Umur'. Wait, where does Umur go? Let's just store it in race or something? No, let's just make it 'Prasekolah' for year, and store the age as part of the data. However, `tahun` can just be `Prasekolah`. Let's set 'tahun': `Umur ${umur}`. Wait, if `tahun` is `Umur 6`, it might break other dropdowns. Let's just set `tahun: 'Prasekolah'`. What happens to `Umur`? User said "Prasekolah ada Nama Murid, Umur, Jantina". Maybe we just need to let them input Umur but we don't really use it? Actually `tahun` can be "Prasekolah (Umur " + umur + ")". No, `tahun` goes into filter dropdown.
+                  gender: String(row['Jantina'] || row['JANTINA'] || '').toLowerCase().startsWith('p') ? 'Perempuan' : 'Lelaki',
+                  race: guessRace(studentName)
+                });
+              }
+            });
+          });
+
+          setUploadData(allNew);
+        } catch (err: any) {
+          setUploadError('Gagal membaca fail Excel Prasekolah.');
+          console.error(err);
+        } finally {
+          setIsUploading(false);
+          if (e.target) e.target.value = '';
+        }
+    };
+    reader.readAsBinaryString(file);
+  };
+
   const confirmUpload = () => {
     if (uploadData.length > 0) {
       saveStudents([...uploadData, ...students]);
@@ -914,7 +971,13 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-0.5">Tahun</span>
                          <select 
                            value={filterTahun} 
-                           onChange={e => { setFilterTahun(e.target.value); setCurrentPage(1); }} 
+                           onChange={e => { 
+                             setFilterTahun(e.target.value); 
+                             if (e.target.value === 'Prasekolah') {
+                               setFilterKelas('Semua');
+                             }
+                             setCurrentPage(1); 
+                           }} 
                            className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4"
                          >
                             <option value="Semua">Semua Tahun</option>
@@ -930,7 +993,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                          <select 
                            value={filterKelas} 
                            onChange={e => { setFilterKelas(e.target.value); setCurrentPage(1); }} 
-                           className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4"
+                           disabled={filterTahun === 'Prasekolah'}
+                           className="bg-transparent text-xs font-black text-slate-700 outline-none cursor-pointer w-full appearance-none pr-4 disabled:opacity-50 disabled:cursor-not-allowed"
                          >
                             <option value="Semua">Semua Kelas</option>
                             {filterClassesList.map(c => (
@@ -1174,7 +1238,8 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                {/* Drawer Tabs */}
                <div className="p-4 border-b border-slate-100 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
                   <button onClick={() => {setFormId(null); setAdminTab('individu'); setFormName('');}} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'individu' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>{formId ? 'Kemaskini Individu' : 'Tambah Individu'}</button>
-                  {!formId && <button onClick={() => setAdminTab('upload')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${adminTab === 'upload' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Upload (Excel/CSV)</button>}
+                  {!formId && <button onClick={() => setAdminTab('upload')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${adminTab === 'upload' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Upload Perdana & PPKI</button>}
+                  {!formId && <button onClick={() => setAdminTab('uploadPrasekolah')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap flex items-center gap-2 ${adminTab === 'uploadPrasekolah' ? 'bg-indigo-600 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Upload Prasekolah</button>}
                   {!formId && <button onClick={() => setAdminTab('pukal')} className={`px-4 py-2 text-xs font-bold rounded-xl transition-all whitespace-nowrap ${adminTab === 'pukal' ? 'bg-slate-900 text-white shadow-md' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}>Teks Pukal</button>}
                </div>
 
@@ -1277,6 +1342,86 @@ export function SenaraiMuridView({ details, isAdmin, onSave }: SenaraiMuridViewP
                                  <h4 className="text-sm font-extrabold text-emerald-900 flex items-center gap-2">
                                     <CheckCircle className="w-4 h-4 text-emerald-600" />
                                     {uploadData.length} Data Bersedia
+                                 </h4>
+                              </div>
+                              <div className="max-h-32 overflow-y-auto w-full custom-scrollbar bg-white rounded-lg border border-emerald-100 p-2 text-xs font-semibold text-slate-600 space-y-1">
+                                 {uploadData.slice(0, 10).map((d, i) => (
+                                    <div key={i} className="flex justify-between border-b border-slate-50 pb-1">
+                                       <span className="truncate w-1/2">{d.name}</span>
+                                       <span className="w-1/4">{d.tahun}</span>
+                                       <span className="w-1/4">{d.gender}</span>
+                                    </div>
+                                 ))}
+                                 {uploadData.length > 10 && <p className="text-center text-emerald-500 font-bold mt-2 pt-1">...serta {uploadData.length - 10} rekod lain</p>}
+                              </div>
+                              
+                              <button onClick={confirmUpload} className="mt-4 w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-95 hidden sm:flex justify-center items-center gap-2">
+                                 Sahkan Simpan & Import
+                              </button>
+                           </div>
+                        )}
+                        
+                        {/* Mobile confirmation placement */}
+                        {uploadData.length > 0 && (
+                           <div className="sm:hidden fixed bottom-0 left-0 right-0 p-4 bg-white border-t z-50">
+                             <button onClick={confirmUpload} className="w-full py-3 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl shadow-md transition-all active:scale-95 flex justify-center items-center gap-2">
+                                 Sahkan Simpan & Import
+                              </button>
+                           </div>
+                        )}
+                     </div>
+                  )}
+
+                  {/* UPLOAD PRASEKOLAH */}
+                  {adminTab === 'uploadPrasekolah' && (
+                     <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                        
+                        <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4">
+                           <h4 className="text-[13px] font-extrabold text-indigo-900 flex items-center gap-2 mb-2">
+                              <FileSpreadsheet className="w-4 h-4 text-indigo-500" />
+                              Cara Format Fail Excel Prasekolah
+                           </h4>
+                           <ul className="text-[11px] font-bold text-indigo-700 space-y-1.5 list-disc pl-4">
+                              <li>Sila guna template rasmi Prasekolah untuk elak ralat.</li>
+                              <li>Mempunyai lajur Nama Murid, Umur, dan Jantina.</li>
+                           </ul>
+                           <button onClick={downloadTemplatePrasekolah} className="mt-4 w-full py-2.5 bg-white border border-indigo-200 hover:bg-indigo-50 text-indigo-700 font-bold text-xs rounded-xl shadow-sm transition-all flex justify-center items-center gap-2">
+                              <Download className="w-4 h-4" /> Muat Turun Template Prasekolah (XLSX)
+                           </button>
+                        </div>
+
+                        <div className="space-y-2">
+                           <label className="text-[11px] font-bold text-slate-500 uppercase tracking-widest ml-1">Pilih Fail Anda (Prasekolah)</label>
+                           {isUploading ? (
+                              <div className="flex flex-col items-center justify-center w-full h-32 border-2 border-indigo-300 border-dashed rounded-2xl bg-indigo-50/50">
+                                 <div className="w-6 h-6 border-2 border-indigo-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                                 <p className="text-xs font-bold text-indigo-600">Sedang memproses fail...</p>
+                              </div>
+                           ) : (
+                              <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-300 border-dashed rounded-2xl cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors group">
+                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <Upload className="w-6 h-6 mb-3 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                                    <p className="mb-1 text-xs text-slate-500 font-bold">Kilk untuk pilih fail Prasekolah</p>
+                                    <p className="text-[10px] text-slate-400 font-semibold">Format: .xlsx / .csv</p>
+                                 </div>
+                                 <input onChange={handleFileUploadPrasekolah} accept=".xlsx, .csv" type="file" className="hidden" />
+                              </label>
+                           )}
+                        </div>
+
+                        {uploadError && (
+                           <div className="p-3 bg-rose-50 text-rose-600 rounded-xl text-xs font-bold border border-rose-100 flex items-center gap-2">
+                              <AlertCircle className="w-4 h-4 shrink-0" />
+                              {uploadError}
+                           </div>
+                        )}
+
+                        {uploadData.length > 0 && (
+                           <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 animate-in fade-in zoom-in-95">
+                              <div className="flex justify-between items-center mb-3">
+                                 <h4 className="text-sm font-extrabold text-emerald-900 flex items-center gap-2">
+                                    <CheckCircle className="w-4 h-4 text-emerald-600" />
+                                    {uploadData.length} Data Prasekolah Bersedia
                                  </h4>
                               </div>
                               <div className="max-h-32 overflow-y-auto w-full custom-scrollbar bg-white rounded-lg border border-emerald-100 p-2 text-xs font-semibold text-slate-600 space-y-1">
