@@ -30,6 +30,38 @@ function MetricCard({ title, value, fromColor, toColor, iconColor, bgIconColor, 
   );
 }
 
+const getBadgeStyles = (jenisKeberadaan: string, status: string) => {
+  const text = (jenisKeberadaan || status) || '';
+  const lowerText = text.toLowerCase();
+
+  if (lowerText.includes('crk') || lowerText.includes('rehat khas')) {
+    return 'bg-amber-50 text-amber-700 border-amber-200';
+  } else if (lowerText.includes('(cr)') || lowerText.includes('cuti rehat')) {
+    return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+  } else if (lowerText.includes('mc') || lowerText.includes('sakit')) {
+    return 'bg-red-50 text-red-700 border-red-200';
+  } else if (lowerText.includes('tanpa rekod') || lowerText.includes('ctr')) {
+    return 'bg-orange-50 text-orange-700 border-orange-200';
+  } else if (lowerText.includes('urusan rasmi') || lowerText.includes('rasmi')) {
+    return 'bg-sky-50 text-sky-700 border-sky-200';
+  } else if (lowerText.includes('program sekolah') || lowerText.includes('kursus') || lowerText.includes('bengkel') || lowerText.includes('ldp')) {
+    return 'bg-cyan-50 text-cyan-700 border-cyan-200';
+  } else if (lowerText.includes('lewat masuk') || lowerText.includes('keluar awal')) {
+    return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+  } else if (lowerText === 'hadir' || (lowerText.includes('hadir') && !lowerText.includes('tidak'))) {
+    return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+  } else if (lowerText.includes('cuti mingguan')) {
+    return 'bg-slate-100 text-slate-600 border-slate-200';
+  } else if (lowerText.includes('tidak hadir') && lowerText.includes('lain')) {
+    return 'bg-violet-50 text-violet-700 border-violet-200';
+  } else if (lowerText.includes('tidak hadir')) {
+    return 'bg-rose-50 text-rose-700 border-rose-200';
+  } else {
+    // Lain-lain / Default fallback
+    return 'bg-violet-50 text-violet-700 border-violet-200';
+  }
+};
+
 export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps) {
   // Combine all staffs for dynamic counting
   const allStaffs = [
@@ -394,20 +426,44 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                       </td>
                       <td className="px-6 py-4.5 whitespace-nowrap text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] lg:text-xs font-black tracking-wider uppercase border justify-center ${item.status === 'Hadir' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : (item.status === 'Cuti Mingguan' ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200')}`}>
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] lg:text-xs font-black tracking-wider uppercase border justify-center ${getBadgeStyles(item.jenisKeberadaan, item.status)}`}>
                             {item.jenisKeberadaan || item.status}
                           </span>
                           {item.tarikhMula && item.tarikhAkhir && (() => {
                             const t1 = new Date(item.tarikhMula);
                             const t2 = new Date(item.tarikhAkhir);
-                            const d1 = isNaN(t1.getTime()) ? '' : t1.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' });
-                            const d2 = isNaN(t2.getTime()) ? '' : t2.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' });
-                            if (d1 && d2 && d1 !== d2) {
-                              return (
-                                <span className="text-[10px] lg:text-xs text-slate-500 font-medium ml-1">
-                                  Mula: {d1} - Hingga: {d2}
-                                </span>
-                              );
+                            
+                            // Normalize dates to midnight to avoid daylight saving time issues
+                            const ut1 = Date.UTC(t1.getFullYear(), t1.getMonth(), t1.getDate());
+                            const ut2 = Date.UTC(t2.getFullYear(), t2.getMonth(), t2.getDate());
+                            
+                            const d1 = isNaN(ut1) ? '' : t1.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' });
+                            const d2 = isNaN(ut2) ? '' : t2.toLocaleDateString('ms-MY', { day: '2-digit', month: 'short', year: 'numeric' });
+                            const diffDays = isNaN(ut1) || isNaN(ut2) ? 0 : Math.floor((ut2 - ut1) / (1000 * 60 * 60 * 24)) + 1;
+
+                            const isKetidakhadiran = item.status === 'Tidak Hadir' || (item.jenisKeberadaan && (item.jenisKeberadaan.toLowerCase().includes('cuti') || item.jenisKeberadaan.toLowerCase().includes('mc') || item.jenisKeberadaan.toLowerCase().includes('sakit')));
+
+                            if (d1 && d2) {
+                              if (d1 !== d2) {
+                                return (
+                                  <div className="flex flex-col items-center mt-1">
+                                    <span className="text-[10px] lg:text-xs text-slate-500 font-medium">
+                                      {d1} - {d2}
+                                    </span>
+                                    {isKetidakhadiran && (
+                                      <span className="text-[10px] lg:text-xs text-slate-600 font-bold">
+                                        ({diffDays} Hari)
+                                      </span>
+                                    )}
+                                  </div>
+                                );
+                              } else if (isKetidakhadiran) {
+                                return (
+                                  <span className="text-[10px] lg:text-xs text-slate-600 font-bold mt-1">
+                                    (1 Hari)
+                                  </span>
+                                );
+                              }
                             }
                             return null;
                           })()}

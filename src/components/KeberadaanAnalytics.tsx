@@ -78,7 +78,9 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
       return {
         id: r.id,
         teacherName: r.teacherName || 'Unknown',
-        date: r.date,
+        date: r.date || r.tarikhMula,
+        tarikhMula: r.tarikhMula,
+        tarikhAkhir: r.tarikhAkhir,
         dObj: dObj,
         jenisKeberadaan: jenisKeberadaan,
       };
@@ -221,18 +223,33 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
     let hadir = 0, crk = 0, mc = 0, kursus = 0, totalAbsences = 0, rasmi = 0;
 
     filteredRecords.forEach(r => {
-      const jk = String(r.jenisKeberadaan || '').toLowerCase();
-      // Heuristic parsing
-      if (jk === 'hadir' || jk.includes('program sekolah')) {
-        hadir++;
-      } else {
-        totalAbsences++;
+      let diffDays = 1;
+
+      if (r.tarikhMula && r.tarikhAkhir) {
+        const t1 = new Date(r.tarikhMula);
+        const t2 = new Date(r.tarikhAkhir);
+        const ut1 = Date.UTC(t1.getFullYear(), t1.getMonth(), t1.getDate());
+        const ut2 = Date.UTC(t2.getFullYear(), t2.getMonth(), t2.getDate());
+        if (!isNaN(ut1) && !isNaN(ut2)) {
+          const days = Math.floor((ut2 - ut1) / (1000 * 60 * 60 * 24)) + 1;
+          if (days > 1) {
+            diffDays = days;
+          }
+        }
       }
 
-      if (jk.includes('crk') || jk.includes('rehat')) crk++;
-      else if (jk.includes('sakit') || jk.includes('mc')) mc++;
-      else if (jk.includes('kursus') || jk.includes('bengkel') || jk.includes('ldp')) kursus++;
-      else if (jk.includes('rasmi')) rasmi++;
+      const jk = String(r.jenisKeberadaan || '').toLowerCase();
+      // Heuristic parsing
+      if (jk === 'hadir' || jk.includes('program sekolah') || jk.includes('lewat masuk') || jk.includes('keluar awal')) {
+        hadir += diffDays;
+      } else {
+        totalAbsences += diffDays;
+      }
+
+      if (jk.includes('crk') || jk.includes('rehat') || jk.includes('cuti rehat') || jk.includes('(cr)')) crk += diffDays;
+      else if (jk.includes('sakit') || jk.includes('mc')) mc += diffDays;
+      else if (jk.includes('kursus') || jk.includes('bengkel') || jk.includes('ldp')) kursus += diffDays;
+      else if (jk.includes('rasmi')) rasmi += diffDays;
     });
 
     return { hadir, crk, mc, kursus, rasmi, totalAbsences };
@@ -575,14 +592,20 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
                           <AlertCircle className="w-20 h-20" />
                         </div>
                         <p className="text-[10px] font-bold text-rose-500 uppercase tracking-widest mb-1 z-10 w-full text-center">Ketidakhadiran</p>
-                        <p className="text-4xl font-black text-slate-800 z-10">{selectedStaffStats?.totalAbsences || 0}</p>
+                        <p className="text-4xl font-black text-slate-800 z-10 flex items-baseline gap-1">
+                          {selectedStaffStats?.totalAbsences || 0}
+                          <span className="text-sm font-bold text-slate-400">Hari</span>
+                        </p>
                      </div>
                      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center justify-center relative overflow-hidden">
                         <div className="absolute -right-4 -bottom-4 opacity-5 text-indigo-800">
                           <Clock className="w-20 h-20" />
                         </div>
                         <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest mb-1 z-10 w-full text-center">Sakit / MC</p>
-                        <p className="text-4xl font-black text-slate-800 z-10">{selectedStaffStats?.mc || 0}</p>
+                        <p className="text-4xl font-black text-slate-800 z-10 flex items-baseline gap-1">
+                          {selectedStaffStats?.mc || 0}
+                          <span className="text-sm font-bold text-slate-400">Hari</span>
+                        </p>
                      </div>
 
                      <div className="bg-white p-4 rounded-3xl border border-slate-200 shadow-sm text-center col-span-2 relative overflow-hidden group hover:border-emerald-300 transition-colors">
@@ -590,19 +613,28 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
                           <Activity className="w-32 h-32" />
                         </div>
                         <div className="flex justify-between items-center px-0 sm:px-4 z-10 relative">
-                          <div className="text-center sm:text-left w-1/3">
+                          <div className="text-center sm:text-left w-1/3 flex flex-col items-center sm:items-start">
                             <p className="text-[9px] sm:text-[10px] font-bold text-emerald-500 uppercase tracking-normal sm:tracking-widest mb-1">Kursus/LDP</p>
-                            <p className="text-2xl sm:text-4xl font-black text-slate-800">{selectedStaffStats?.kursus || 0}</p>
+                            <p className="text-2xl sm:text-4xl font-black text-slate-800 flex items-baseline gap-1">
+                              {selectedStaffStats?.kursus || 0}
+                              <span className="text-[10px] sm:text-xs font-bold text-slate-400">Hari</span>
+                            </p>
                           </div>
                           <div className="h-10 sm:h-12 w-px bg-slate-200 shrink-0"></div>
-                          <div className="text-center w-1/3 px-1">
+                          <div className="text-center w-1/3 px-1 flex flex-col items-center">
                             <p className="text-[9px] sm:text-[10px] font-bold text-amber-500 uppercase tracking-normal sm:tracking-widest mb-1">Cuti / CRK</p>
-                            <p className="text-2xl sm:text-3xl font-black text-slate-700">{selectedStaffStats?.crk || 0}</p>
+                            <p className="text-2xl sm:text-3xl font-black text-slate-700 flex items-baseline gap-1">
+                              {selectedStaffStats?.crk || 0}
+                              <span className="text-[10px] sm:text-xs font-bold text-slate-400">Hari</span>
+                            </p>
                           </div>
                           <div className="h-10 sm:h-12 w-px bg-slate-200 shrink-0"></div>
-                          <div className="text-center sm:text-right w-1/3">
+                          <div className="text-center sm:text-right w-1/3 flex flex-col items-center sm:items-end">
                              <p className="text-[9px] sm:text-[10px] font-bold text-cyan-500 uppercase tracking-normal sm:tracking-widest mb-1">Urusan Rasmi</p>
-                             <p className="text-2xl sm:text-4xl font-black text-slate-800">{selectedStaffStats?.rasmi || 0}</p>
+                             <p className="text-2xl sm:text-4xl font-black text-slate-800 flex items-baseline gap-1">
+                               {selectedStaffStats?.rasmi || 0}
+                               <span className="text-[10px] sm:text-xs font-bold text-slate-400">Hari</span>
+                             </p>
                           </div>
                         </div>
                      </div>
