@@ -148,6 +148,9 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
     setSelectedDate(d.toISOString().split('T')[0]);
   };
 
+  const parsedDateForFilter = new Date(selectedDate);
+  const isWeekendCheck = parsedDateForFilter.getDay() === 0 || parsedDateForFilter.getDay() === 6;
+
   // Generate view data
   const filteredRecords = allStaffs.map(staff => {
     // Look for record for selected date based on ID or matching exact names
@@ -157,14 +160,17 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
     );
     return {
       staff,
-      status: rec ? rec.status : 'Hadir', // Default Hadir if no record explicitly setting 'Tidak Hadir'
+      status: rec ? rec.status : (isWeekendCheck ? 'Cuti Mingguan' : 'Hadir'), // Default Hadir if no record explicitly setting 'Tidak Hadir', on weekend default to 'Cuti Mingguan'
       remarks: rec ? rec.remarks : '',
       tarikhMula: rec ? rec.tarikhMula : '',
       tarikhAkhir: rec ? rec.tarikhAkhir : '',
-      jenisKeberadaan: rec ? rec.jenisKeberadaan : '',
+      jenisKeberadaan: rec ? rec.jenisKeberadaan : (isWeekendCheck ? 'Cuti Mingguan' : ''),
       butiran: rec ? rec.butiran : ''
     };
   }).filter(item => {
+    // Sembunyikan guru yang tiada rekod khusus pada hujung minggu
+    if (isWeekendCheck && item.jenisKeberadaan === 'Cuti Mingguan') return false;
+
     // Tapis nama/jawatan/catatan
     const searchLow = searchQuery.toLowerCase();
     const matchSearch = item.staff.name.toLowerCase().includes(searchLow) ||
@@ -192,18 +198,21 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
     return matchSearch && matchStatus && matchOption;
   });
 
+  const parsedDate = new Date(selectedDate);
+  const isWeekend = parsedDate.getDay() === 0 || parsedDate.getDay() === 6;
+
   const totalStaff = allStaffs.length;
   // Based on current selected date
-  const totalNotHadir = allStaffs.filter(staff => {
+  const totalNotHadir = isWeekend ? 0 : allStaffs.filter(staff => {
     const rec = records.find(r => 
       (r.teacherId === staff.id || (r.teacherName && r.teacherName.trim().toLowerCase() === staff.name.trim().toLowerCase()))
       && selectedDate >= (r.tarikhMula || r.date) && selectedDate <= (r.tarikhAkhir || r.date)
     );
     return rec && rec.status !== 'Hadir';
   }).length;
-  const totalHadir = totalStaff - totalNotHadir;
+  const totalHadir = isWeekend ? 0 : totalStaff - totalNotHadir;
   
-  const peratusCemerlang = totalStaff > 0 ? Math.round((totalHadir / totalStaff) * 100) : 0;
+  const peratusCemerlang = totalStaff > 0 && !isWeekend ? Math.round((totalHadir / totalStaff) * 100) : 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300 pb-12 w-full">
@@ -385,7 +394,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                       </td>
                       <td className="px-6 py-4.5 whitespace-nowrap text-center">
                         <div className="flex flex-col items-center gap-1">
-                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] lg:text-xs font-black tracking-wider uppercase border justify-center ${item.status === 'Hadir' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : 'bg-rose-50 text-rose-700 border-rose-200'}`}>
+                          <span className={`inline-flex items-center px-3 py-1.5 rounded-xl text-[10px] lg:text-xs font-black tracking-wider uppercase border justify-center ${item.status === 'Hadir' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' : (item.status === 'Cuti Mingguan' ? 'bg-slate-100 text-slate-600 border-slate-200' : 'bg-rose-50 text-rose-700 border-rose-200')}`}>
                             {item.jenisKeberadaan || item.status}
                           </span>
                           {item.tarikhMula && item.tarikhAkhir && (() => {
