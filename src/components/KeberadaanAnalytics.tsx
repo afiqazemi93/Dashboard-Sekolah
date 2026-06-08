@@ -240,7 +240,7 @@ export function KeberadaanAnalytics({ records, staffs }: KeberadaanAnalyticsProp
 
       const jk = String(r.jenisKeberadaan || '').toLowerCase();
       // Heuristic parsing
-      if (jk === 'hadir' || jk.includes('program sekolah') || jk.includes('lewat masuk') || jk.includes('keluar awal')) {
+      if (jk === 'hadir' || jk.includes('program sekolah') || jk.includes('lewat masuk') || jk.includes('keluar awal') || jk.includes('urusan rasmi')) {
         hadir += diffDays;
       } else {
         totalAbsences += diffDays;

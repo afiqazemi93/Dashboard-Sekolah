@@ -76,6 +76,7 @@ export interface KeberadaanRecord {
   tarikhAkhir?: string;
   jenisKeberadaan?: string;
   butiran?: string;
+  masa?: string;
 }
 
 export interface PanitiaMember {

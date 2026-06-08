@@ -62,6 +62,21 @@ const getBadgeStyles = (jenisKeberadaan: string, status: string) => {
   }
 };
 
+const cleanRecords = (recs: KeberadaanRecord[]): KeberadaanRecord[] => {
+  if (!recs) return [];
+  return recs.map(r => {
+    let jk = r.jenisKeberadaan || '';
+    if (jk.toLowerCase().includes('urusan rasmi')) {
+      jk = 'Urusan Rasmi';
+    }
+    let m = r.masa || '';
+    if (m) {
+      m = formatTimeToAmPm(m);
+    }
+    return { ...r, jenisKeberadaan: jk, masa: m };
+  });
+};
+
 function formatTimeToAmPm(timeStr: string): string {
   if (!timeStr) return '';
   let cleaned = timeStr.trim();
@@ -71,29 +86,71 @@ function formatTimeToAmPm(timeStr: string): string {
   
   if (!cleaned) return '';
 
-  // Regex to match hour counter, minute counter, optional seconds counter, and optional AM/PM
-  const fullTimeRegex = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([APap][Mm]))?$/;
-  const match = cleaned.match(fullTimeRegex);
-  if (match) {
-    let hours = parseInt(match[1], 10);
-    const minutes = match[2];
-    let ampm = match[4] ? match[4].toUpperCase() : '';
-    
-    // If AM/PM wasn't specified in input, calculate it from hours
-    if (!ampm) {
-      ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12; // the hour '0' should be '12'
+  // If it looks like a JavaScript date string, ISO datetime, or contains Google Sheets epoch date (1899-12-30)
+  if (cleaned.includes('1899') || /^\d{4}-\d{2}-\d{2}/.test(cleaned) || cleaned.includes('GMT')) {
+    // Try to extract time in "HH:MM:SS" or "HH:MM" format
+    const timeMatch = cleaned.match(/(?:T|\s|^|\b)(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([APap][Mm]))?/i);
+    if (timeMatch) {
+      cleaned = `${timeMatch[1]}:${timeMatch[2]}${timeMatch[3] ? ':' + timeMatch[3] : ''}${timeMatch[4] ? ' ' + timeMatch[4] : ''}`;
     } else {
-      // If AM/PM is present, keep hours in 12-hour format or normalize
-      if (hours > 12) {
-        hours = hours % 12;
-        hours = hours ? hours : 12;
+      // If no time is matched and it's literally an 1899 date, it means Apps Script destroyed the time
+      if (cleaned.includes('1899-12-30')) {
+        return '';
       }
     }
-    
-    return `${hours}:${minutes} ${ampm}`;
   }
+
+  // Safe fallback to convert dot separation to colon (e.g. 8.30 am -> 8:30 am)
+  let matchedStr = cleaned;
+  if (/^\d{1,2}\.\d{2}/.test(cleaned)) {
+    matchedStr = cleaned.replace(/^(\d{1,2})\.(\d{2})/, '$1:$2');
+  }
+
+  // Fallback for 4 digit military time like 1400 -> 14:00
+  if (/^\d{4}$/.test(matchedStr)) {
+    matchedStr = matchedStr.slice(0, 2) + ':' + matchedStr.slice(2);
+  }
+
+  // Fallback for 3 digit military time like 830 -> 8:30
+  if (/^\d{3}$/.test(matchedStr)) {
+    matchedStr = matchedStr.slice(0, 1) + ':' + matchedStr.slice(1);
+  }
+
+  // Regex to match hour counter, minute counter, optional seconds counter, and optional AM/PM
+  const fullTimeRegex = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([APap][Mm]))?$/;
+  const match = matchedStr.match(fullTimeRegex);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    let minutesInt = parseInt(match[2], 10);
+    let ampm = match[4] ? match[4].toUpperCase() : '';
+    
+    // Convert to 24-hour time for accurate shifting
+    if (ampm === 'PM' && hours < 12) hours += 12;
+    if (ampm === 'AM' && hours === 12) hours = 0;
+    
+    // Auto-correct Google Sheets 26-minute LMT shift bug
+    // Usually times are entered ending in 0 or 5 (e.g. 7:30, 8:00, 12:00)
+    // When shifted backwards by 26 mins, they end in 4 or 9 (e.g. 04, 34, 49)
+    if ([4, 9, 14, 19, 24, 29, 34, 39, 44, 49, 54, 59].includes(minutesInt)) {
+      // It is extremely likely this is the 26-minute Google Sheets offset shift. Restore it.
+      const shifted = new Date(1899, 0, 1, hours, minutesInt);
+      shifted.setMinutes(shifted.getMinutes() + 26);
+      hours = shifted.getHours();
+      minutesInt = shifted.getMinutes();
+    }
+
+    const minutesStr = minutesInt.toString().padStart(2, '0');
+    
+    // Always calculate AM/PM from 24-hour format
+    ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    
+    return `${hours}:${minutesStr} ${ampm}`;
+  }
+
+  // Final catch: If somehow it is still 1899-12-30 exactly, hide it
+  if (cleaned === '1899-12-30') return '';
 
   return cleaned;
 }
@@ -107,7 +164,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   ];
 
   const [activeSubTab, setActiveSubTab] = useState<'senarai' | 'analitik'>('senarai');
-  const [records, setRecords] = useState<KeberadaanRecord[]>(details.keberadaanRecords || []);
+  const [records, setRecords] = useState<KeberadaanRecord[]>(() => cleanRecords(details.keberadaanRecords || []));
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
@@ -160,7 +217,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
               let jenisKeberadaan = (jenisKey ? d[jenisKey] : '') || '';
               // Clean up specific labels
               if (jenisKeberadaan.includes('Cuti Tanpa Rekod')) jenisKeberadaan = 'Tidak Hadir – Cuti Tanpa Rekod';
-              if (jenisKeberadaan.includes('Urusan Rasmi')) jenisKeberadaan = 'Tidak Hadir – Urusan Rasmi';
+              if (jenisKeberadaan.toLowerCase().includes('urusan rasmi')) jenisKeberadaan = 'Urusan Rasmi';
               
               const jkClean = jenisKeberadaan.toLowerCase();
               let isHadir = jkClean.includes('program sekolah') || 
@@ -169,16 +226,24 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                             jkClean.includes('kursus') || 
                             jkClean.includes('bengkel') || 
                             jkClean.includes('ldp') ||
-                            jkClean.includes('program/taklimat');
+                            jkClean.includes('program/taklimat') ||
+                            jkClean.includes('urusan rasmi');
               let status = isHadir ? 'Hadir' : 'Tidak Hadir';
               
               // Handle multiple potential list of details
               let butiran = '';
               let masaValue = '';
               
-              const masaKey = keys.find(k => k.toLowerCase() === 'masa');
-              if (masaKey && d[masaKey]) {
-                masaValue = formatTimeToAmPm(String(d[masaKey]).trim());
+              const masaKey = keys.find(k => {
+                const kl = k.trim().toLowerCase();
+                return kl === 'masa' || kl === 'time' || kl === 'pukul' || kl.includes('masa ') || kl.includes(' waktu');
+              });
+              let rawMasa = d.masa || d.Masa || d.Time || d.time || '';
+              if (!rawMasa && masaKey) {
+                rawMasa = d[masaKey];
+              }
+              if (rawMasa) {
+                masaValue = formatTimeToAmPm(String(rawMasa).trim());
               }
 
               if (d.butiran !== undefined && d.butiran !== '') {
@@ -223,7 +288,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       // Option B: Fetch from Supabase
       const data = await getDocument('keberadaan');
       if (data && data.keberadaanRecords) {
-        setRecords(data.keberadaanRecords);
+        setRecords(cleanRecords(data.keberadaanRecords));
       }
     } catch (e) {
       console.warn("Auto-refresh keberadaan failed:", e);
@@ -271,17 +336,18 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
 
     // Extract and strip any "Masa: ..." portion dynamically if present in displayButiran
     if (displayButiran) {
-      const masaMatch = displayButiran.match(/(?:\|\s*)?(?:Masa|masa)\s*:\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)/i);
+      const masaMatch = displayButiran.match(/(?:Masa|masa)\s*:\s*([^|]+)/i);
       if (masaMatch) {
         if (!displayMasa) {
-          displayMasa = masaMatch[1];
+          displayMasa = masaMatch[1].trim();
         }
-        displayButiran = displayButiran.replace(/(?:\s*\|\s*)?(?:Masa|masa)\s*:\s*\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?/gi, '');
+        displayButiran = displayButiran.replace(/(?:Masa|masa)\s*:\s*([^|]+)/i, '');
       }
     }
 
-    // Direct cleanup of any raw leftover "Masa: 12:00:00" or similar
-    displayButiran = displayButiran.replace(/(?:Masa|masa)\s*:\s*\S+/gi, '').trim();
+    // Clean up multiple continuous pipes and leading/trailing leftovers
+    displayButiran = displayButiran.trim().replace(/^\|\s*|\s*\|$/g, '').trim();
+    displayButiran = displayButiran.replace(/\|\s*\|/g, '|').trim();
     displayButiran = displayButiran.trim().replace(/^\|\s*|\s*\|$/g, '').trim();
 
     if (displayMasa) {
@@ -349,7 +415,8 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                        jkClean.includes('kursus') ||
                        jkClean.includes('bengkel') ||
                        jkClean.includes('ldp') ||
-                       jkClean.includes('program/taklimat');
+                       jkClean.includes('program/taklimat') ||
+                       jkClean.includes('urusan rasmi');
     if (isExcluded) return false;
 
     return rec.status !== 'Hadir';

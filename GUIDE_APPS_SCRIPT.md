@@ -53,10 +53,15 @@ function doGet(e) {
         const headerName = headers[j];
         let rawValue = row[j];
         
-        // Memformat objek Tarikh ke rentetan format 'YYYY-MM-DD' secara selamat
+        // Memformat objek Tarikh ke rentetan format secara selamat
         if (rawValue instanceof Date) {
-          // Guna format ISO tempatan (zon waktu skrip)
-          rawValue = Utilities.formatDate(rawValue, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          // Semak jika tahun adalah 1899, bermakna ia adalah sel 'Masa' (Time) dan kita perlu tetapkan ia sebagai HH:mm
+          if (rawValue.getFullYear() === 1899) {
+            rawValue = Utilities.formatDate(rawValue, Session.getScriptTimeZone(), "HH:mm");
+          } else {
+            // Jika ia adalah tarikh biasa, simpan sebagai YYYY-MM-DD
+            rawValue = Utilities.formatDate(rawValue, Session.getScriptTimeZone(), "yyyy-MM-dd");
+          }
         }
         
         // Simpan data di bawah kunci asal dan juga kunci yang telah dinormalisasikan
