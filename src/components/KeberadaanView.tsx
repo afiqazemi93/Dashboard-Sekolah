@@ -641,6 +641,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
 
                             const isKetidakhadiran = item.status === 'Tidak Hadir' || (item.jenisKeberadaan && (item.jenisKeberadaan.toLowerCase().includes('cuti') || item.jenisKeberadaan.toLowerCase().includes('mc') || item.jenisKeberadaan.toLowerCase().includes('sakit')));
                             const isKursusBengkelLdp = item.jenisKeberadaan && (item.jenisKeberadaan.toLowerCase().includes('kursus') || item.jenisKeberadaan.toLowerCase().includes('bengkel') || item.jenisKeberadaan.toLowerCase().includes('ldp') || item.jenisKeberadaan.toLowerCase().includes('bengkel/ldp'));
+                            const isUrusanRasmi = item.jenisKeberadaan && item.jenisKeberadaan.toLowerCase().includes('urusan rasmi');
 
                             if (d1 && d2) {
                               if (d1 !== d2) {
@@ -649,14 +650,14 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                                     <span className="text-[10px] lg:text-xs text-slate-500 font-medium">
                                       {d1} - {d2}
                                     </span>
-                                    {(isKetidakhadiran || isKursusBengkelLdp) && (
+                                    {(isKetidakhadiran || isKursusBengkelLdp || isUrusanRasmi) && (
                                       <span className="text-[10px] lg:text-xs text-slate-600 font-bold">
                                         ({diffDays} Hari)
                                       </span>
                                     )}
                                   </div>
                                 );
-                              } else if (isKetidakhadiran || isKursusBengkelLdp) {
+                              } else if (isKetidakhadiran || isKursusBengkelLdp || isUrusanRasmi) {
                                 return (
                                   <span className="text-[10px] lg:text-xs text-slate-600 font-bold mt-1">
                                     (1 Hari)
