@@ -62,6 +62,42 @@ const getBadgeStyles = (jenisKeberadaan: string, status: string) => {
   }
 };
 
+function formatTimeToAmPm(timeStr: string): string {
+  if (!timeStr) return '';
+  let cleaned = timeStr.trim();
+  
+  // Strip "Masa:" or "Masa : " prefix if present
+  cleaned = cleaned.replace(/^(masa|Masa)\s*:\s*/i, '');
+  
+  if (!cleaned) return '';
+
+  // Regex to match hour counter, minute counter, optional seconds counter, and optional AM/PM
+  const fullTimeRegex = /^(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*([APap][Mm]))?$/;
+  const match = cleaned.match(fullTimeRegex);
+  if (match) {
+    let hours = parseInt(match[1], 10);
+    const minutes = match[2];
+    let ampm = match[4] ? match[4].toUpperCase() : '';
+    
+    // If AM/PM wasn't specified in input, calculate it from hours
+    if (!ampm) {
+      ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12; // the hour '0' should be '12'
+    } else {
+      // If AM/PM is present, keep hours in 12-hour format or normalize
+      if (hours > 12) {
+        hours = hours % 12;
+        hours = hours ? hours : 12;
+      }
+    }
+    
+    return `${hours}:${minutes} ${ampm}`;
+  }
+
+  return cleaned;
+}
+
 export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps) {
   // Combine all staffs for dynamic counting
   const allStaffs = [
@@ -124,9 +160,43 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
               if (jenisKeberadaan.includes('Cuti Tanpa Rekod')) jenisKeberadaan = 'Tidak Hadir – Cuti Tanpa Rekod';
               if (jenisKeberadaan.includes('Urusan Rasmi')) jenisKeberadaan = 'Tidak Hadir – Urusan Rasmi';
               
-              let isHadir = jenisKeberadaan.includes('Program Sekolah') || jenisKeberadaan.includes('Lewat Masuk') || jenisKeberadaan.includes('Keluar Awal');
+              const jkClean = jenisKeberadaan.toLowerCase();
+              let isHadir = jkClean.includes('program sekolah') || 
+                            jkClean.includes('lewat masuk') || 
+                            jkClean.includes('keluar awal') || 
+                            jkClean.includes('kursus') || 
+                            jkClean.includes('bengkel') || 
+                            jkClean.includes('ldp') ||
+                            jkClean.includes('program/taklimat');
               let status = isHadir ? 'Hadir' : 'Tidak Hadir';
-              let butiran = (butiranKey ? d[butiranKey] : '') || '';
+              
+              // Handle multiple potential list of details
+              let butiran = '';
+              let masaValue = '';
+              
+              const masaKey = keys.find(k => k.toLowerCase() === 'masa');
+              if (masaKey && d[masaKey]) {
+                masaValue = formatTimeToAmPm(String(d[masaKey]).trim());
+              }
+
+              if (d.butiran !== undefined && d.butiran !== '') {
+                butiran = String(d.butiran);
+              } else {
+                const parts: string[] = [];
+                // Check course, official duty, or other reasons
+                const courseKey = keys.find(k => k.toLowerCase().includes('kursus') || k.toLowerCase().includes('urusan rasmi') || k.toLowerCase().includes('sebab lain-lain'));
+                // Check late/early outlet reasons 
+                const programKey = keys.find(k => k.toLowerCase().includes('program/taklimat') || k.toLowerCase().includes('sebab lewat') || k.toLowerCase().includes('keluar awal'));
+
+                if (courseKey && d[courseKey]) parts.push(String(d[courseKey]).trim());
+                if (programKey && d[programKey]) parts.push(String(d[programKey]).trim());
+
+                if (parts.length > 0) {
+                  butiran = parts.filter(Boolean).join(' | ');
+                } else if (butiranKey) {
+                  butiran = String(d[butiranKey] || '');
+                }
+              }
 
               return {
                 id: d.id || d.Timestamp || `gas-${i}`,
@@ -138,8 +208,9 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                 tarikhMula: tarikhMula,
                 tarikhAkhir: tarikhAkhir,
                 jenisKeberadaan: jenisKeberadaan,
-                butiran: butiran
-              };
+                butiran: butiran,
+                masa: masaValue
+              } as any;
             });
             setRecords(mappedRecords);
             return; // Skip Firestore if GAS is successful
@@ -190,6 +261,29 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       (r.teacherId === staff.id || (r.teacherName && r.teacherName.trim().toLowerCase() === staff.name.trim().toLowerCase())) 
       && selectedDate >= (r.tarikhMula || r.date) && selectedDate <= (r.tarikhAkhir || r.date)
     );
+    
+    let displayButiran = rec ? rec.butiran || '' : '';
+    let displayMasa = rec ? (rec as any).masa || '' : '';
+
+    // Extract and strip any "Masa: ..." portion dynamically if present in displayButiran
+    if (displayButiran) {
+      const masaMatch = displayButiran.match(/(?:\|\s*)?(?:Masa|masa)\s*:\s*(\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?)/i);
+      if (masaMatch) {
+        if (!displayMasa) {
+          displayMasa = masaMatch[1];
+        }
+        displayButiran = displayButiran.replace(/(?:\s*\|\s*)?(?:Masa|masa)\s*:\s*\d{1,2}:\d{2}(?::\d{2})?(?:\s*[APap][Mm])?/gi, '');
+      }
+    }
+
+    // Direct cleanup of any raw leftover "Masa: 12:00:00" or similar
+    displayButiran = displayButiran.replace(/(?:Masa|masa)\s*:\s*\S+/gi, '').trim();
+    displayButiran = displayButiran.trim().replace(/^\|\s*|\s*\|$/g, '').trim();
+
+    if (displayMasa) {
+      displayMasa = formatTimeToAmPm(displayMasa);
+    }
+
     return {
       staff,
       status: rec ? rec.status : (isWeekendCheck ? 'Cuti Mingguan' : 'Hadir'), // Default Hadir if no record explicitly setting 'Tidak Hadir', on weekend default to 'Cuti Mingguan'
@@ -197,7 +291,8 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       tarikhMula: rec ? rec.tarikhMula : '',
       tarikhAkhir: rec ? rec.tarikhAkhir : '',
       jenisKeberadaan: rec ? rec.jenisKeberadaan : (isWeekendCheck ? 'Cuti Mingguan' : ''),
-      butiran: rec ? rec.butiran : ''
+      butiran: displayButiran,
+      masa: displayMasa
     };
   }).filter(item => {
     // Sembunyikan guru yang tiada rekod khusus pada hujung minggu
@@ -240,7 +335,20 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       (r.teacherId === staff.id || (r.teacherName && r.teacherName.trim().toLowerCase() === staff.name.trim().toLowerCase()))
       && selectedDate >= (r.tarikhMula || r.date) && selectedDate <= (r.tarikhAkhir || r.date)
     );
-    return rec && rec.status !== 'Hadir';
+    if (!rec) return false;
+    
+    // Explicitly exclude these categories from being counted as 'Tidak Hadir' card value
+    const jkClean = (rec.jenisKeberadaan || '').toLowerCase();
+    const isExcluded = jkClean.includes('program sekolah') ||
+                       jkClean.includes('lewat masuk') ||
+                       jkClean.includes('keluar awal') ||
+                       jkClean.includes('kursus') ||
+                       jkClean.includes('bengkel') ||
+                       jkClean.includes('ldp') ||
+                       jkClean.includes('program/taklimat');
+    if (isExcluded) return false;
+
+    return rec.status !== 'Hadir';
   }).length;
   const totalHadir = isWeekend ? 0 : totalStaff - totalNotHadir;
   
@@ -470,7 +578,17 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                         </div>
                       </td>
                       <td className="px-6 py-4.5 whitespace-normal">
-                        <span className="text-[11px] lg:text-sm font-semibold text-gray-700">{item.butiran || '-'}</span>
+                        <div className="flex flex-col items-start gap-1.5">
+                          <span className="text-[11px] lg:text-sm font-semibold text-gray-700">{item.butiran || '-'}</span>
+                          {item.masa && (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100/80 shadow-xs matches-time mt-1">
+                              <svg className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                              </svg>
+                              Masa: {item.masa}
+                            </span>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
