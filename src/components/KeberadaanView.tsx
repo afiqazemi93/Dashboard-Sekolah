@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { UserCheck, Search, ChevronLeft, ChevronRight, ExternalLink, Users, UserMinus, Percent, PieChart, LayoutList } from 'lucide-react';
+import { UserCheck, Search, ChevronLeft, ChevronRight, ExternalLink, Users, UserMinus, Percent, PieChart, LayoutList, RefreshCw } from 'lucide-react';
 import { SchoolDetails, KeberadaanRecord, Teacher } from '../types';
 import { getDocument } from '../supabase';
 import { KeberadaanAnalytics } from './KeberadaanAnalytics';
@@ -111,9 +111,11 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
   const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('Semua');
+  const [isReloading, setIsReloading] = useState(false);
 
   // Fetch live data from Firestore or Apps Script
-  const ambilDataLive = async () => {
+  const ambilDataLive = async (forceShowLoading = false) => {
+    if (forceShowLoading) setIsReloading(true);
     try {
       if (details.keberadaanGasUrl) {
         let fetchUrl = details.keberadaanGasUrl;
@@ -225,6 +227,8 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
       }
     } catch (e) {
       console.warn("Auto-refresh keberadaan failed:", e);
+    } finally {
+      setIsReloading(false);
     }
   };
 
@@ -430,14 +434,24 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
             </div>
 
         {/* CARI & FILTER */}
-        <div className="flex flex-col sm:flex-row gap-3 w-full lg:w-auto flex-1 lg:flex-initial lg:max-w-2xl justify-end">
-          <div className="relative flex-1">
+        <div className="flex flex-wrap items-center gap-3 w-full lg:w-auto flex-1 lg:flex-initial lg:max-w-3xl justify-end">
+          {/* Desktop/Large Tablet Reload Button (Left of the search bar, icon only, no text) */}
+          <button
+            onClick={() => ambilDataLive(true)}
+            disabled={isReloading}
+            className="hidden lg:flex items-center justify-center p-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-indigo-600 rounded-xl transition-all border border-slate-200/40 shrink-0 self-stretch"
+            title="Muat Semula"
+          >
+            <RefreshCw className={`w-5 h-5 ${isReloading ? 'animate-spin text-indigo-600' : ''}`} />
+          </button>
+
+          <div className="relative flex-1 min-w-[200px]">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-gray-400" />
             </div>
             <input
               type="text"
-              className="block w-full pl-10 pr-3 py-2 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm transition-colors"
+              className="block w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-xl leading-5 bg-slate-50 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 sm:text-sm transition-colors"
               placeholder="Cari nama, jawatan atau catatan..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -446,7 +460,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="w-full sm:w-auto border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+            className="w-full sm:w-auto border border-slate-200 rounded-xl px-3 py-2.5 text-sm text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 min-w-[150px]"
           >
             <option value="Semua">Semua</option>
             <option value="Program Sekolah">Program Sekolah</option>
@@ -459,6 +473,15 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
             <option value="Kursus / Bengkel / LDP">Kursus / Bengkel / LDP</option>
             <option value="Lain-lain">Lain-lain</option>
           </select>
+
+          {/* Mobile & Tablet Reload Button (Below dropdown, only text, responsive) */}
+          <button
+            onClick={() => ambilDataLive(true)}
+            disabled={isReloading}
+            className="lg:hidden w-full flex items-center justify-center py-2.5 mt-1 text-xs font-black text-indigo-700 bg-indigo-50 hover:bg-indigo-100/80 active:bg-indigo-100 border border-indigo-100/80 rounded-xl transition-all shadow-xs"
+          >
+            <span>{isReloading ? 'Memuat Semula...' : 'Muat Semula'}</span>
+          </button>
         </div>
       </div>
 
@@ -509,7 +532,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                 <th scope="col" className="px-6 py-5 text-center text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em]">
                   Jenis Keberadaan
                 </th>
-                <th scope="col" className="px-6 py-5 text-left text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em]">
+                <th scope="col" className="px-6 py-5 text-left text-[11px] lg:text-sm font-black text-white uppercase tracking-[0.1em] min-w-[200px] sm:min-w-[280px] md:min-w-[320px]">
                   Butiran
                 </th>
               </tr>
@@ -550,6 +573,7 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                             const diffDays = isNaN(ut1) || isNaN(ut2) ? 0 : Math.floor((ut2 - ut1) / (1000 * 60 * 60 * 24)) + 1;
 
                             const isKetidakhadiran = item.status === 'Tidak Hadir' || (item.jenisKeberadaan && (item.jenisKeberadaan.toLowerCase().includes('cuti') || item.jenisKeberadaan.toLowerCase().includes('mc') || item.jenisKeberadaan.toLowerCase().includes('sakit')));
+                            const isKursusBengkelLdp = item.jenisKeberadaan && (item.jenisKeberadaan.toLowerCase().includes('kursus') || item.jenisKeberadaan.toLowerCase().includes('bengkel') || item.jenisKeberadaan.toLowerCase().includes('ldp') || item.jenisKeberadaan.toLowerCase().includes('bengkel/ldp'));
 
                             if (d1 && d2) {
                               if (d1 !== d2) {
@@ -558,14 +582,14 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                                     <span className="text-[10px] lg:text-xs text-slate-500 font-medium">
                                       {d1} - {d2}
                                     </span>
-                                    {isKetidakhadiran && (
+                                    {(isKetidakhadiran || isKursusBengkelLdp) && (
                                       <span className="text-[10px] lg:text-xs text-slate-600 font-bold">
                                         ({diffDays} Hari)
                                       </span>
                                     )}
                                   </div>
                                 );
-                              } else if (isKetidakhadiran) {
+                              } else if (isKetidakhadiran || isKursusBengkelLdp) {
                                 return (
                                   <span className="text-[10px] lg:text-xs text-slate-600 font-bold mt-1">
                                     (1 Hari)
@@ -577,15 +601,12 @@ export function KeberadaanView({ details, isAdmin, onSave }: KeberadaanViewProps
                           })()}
                         </div>
                       </td>
-                      <td className="px-6 py-4.5 whitespace-normal">
+                      <td className="px-6 py-4.5 whitespace-normal min-w-[200px] sm:min-w-[280px] md:min-w-[320px]">
                         <div className="flex flex-col items-start gap-1.5">
                           <span className="text-[11px] lg:text-sm font-semibold text-gray-700">{item.butiran || '-'}</span>
                           {item.masa && (
-                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] lg:text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100/80 shadow-xs matches-time mt-1">
-                              <svg className="w-3.5 h-3.5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
-                              </svg>
-                              Masa: {item.masa}
+                            <span className="inline-flex items-center px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full text-[9px] sm:text-[10px] md:text-xs font-extrabold bg-indigo-50 text-indigo-700 border border-indigo-100/80 shadow-xs matches-time mt-1">
+                              {item.masa}
                             </span>
                           )}
                         </div>
